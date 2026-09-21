@@ -1,7 +1,7 @@
 # 🎓 Pasaporte Docente — V1 Lite
 ### Sistema Inteligente de Asistencia Gamificada con Pasaporte Digital y Escáner Continuo por Voz
 
-[![Licencia](https://img.shields.io/badge/Licencia-CC%20BY--NC--SA%204.0-amber.svg)](LICENSE)
+[![Licencia](https://img.shields.io/badge/Licencia-MIT-amber.svg)](LICENSE)
 [![Versión](https://img.shields.io/badge/Versión-1.0.0%20Lite-emerald.svg)](#)
 [![Google Cloud](https://img.shields.io/badge/Google%20Firebase-Spark%20(100%25%20Gratis)-blue.svg)](#)
 [![Agentic-First](https://img.shields.io/badge/Instalación-Agentic%20(1--Clic)-purple.svg)](#)
@@ -124,5 +124,5 @@ Este sistema fue concebido, diseñado y desarrollado originalmente por el **Prof
 
 ## 📜 Licencia
 
-Este proyecto está bajo la licencia **Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional (CC BY-NC-SA 4.0)**.  
-Eres libre de utilizarlo, compartirlo y adaptarlo en tu aula escolar, siempre que mantengas la **atribución visible al autor original (Salvador Almánzar)** y no se utilice con fines comerciales de reventa sin autorización expresa.
+Este proyecto está bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.  
+Eres libre de utilizarlo, modificarlo y compartirlo en tu aula escolar, manteniendo siempre el aviso de copyright y la atribución al autor original (**Prof. Salvador Almánzar**).
