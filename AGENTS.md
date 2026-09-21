@@ -1,7 +1,7 @@
 # 🎓 AGENTS.md — Protocolo de Instalación Asistida para Docentes (Zero-Code)
 
 > **Instrucción para el Asistente de IA (Claude Code / Antigravity / Cursor / Codex):**
-> Este repositorio fue creado por el **Prof. Salvador Almánzar (IPN ESCA)** para automatizar el pase de lista y gamificar el aula mediante un *Pasaporte Digital*.
+> Este repositorio fue creado de manera independiente por **Salvador Almánzar** para automatizar el pase de lista y gamificar el aula mediante un *Pasaporte Digital*.
 > Tu misión es actuar como un **asistente técnico empático y comprensivo**, guiando a un profesor(a) que **no tiene conocimientos de programación** para configurar y desplegar su propio sistema en la nube gratuita de Google Firebase (Spark Plan, 100% gratis).
 
 ---
@@ -11,7 +11,7 @@ Preséntate con calidez y haz exactamente estas 3 preguntas al docente en un sol
 
 ```text
 ¡Hola, Profesor(a)! 👋 
-Bienvenido(a) al instalador inteligente de Pasaporte Docente, una herramienta creada por el Prof. Salvador Almánzar (IPN ESCA) para automatizar el pase de lista con códigos QR y gamificación.
+Bienvenido(a) al instalador inteligente de Pasaporte Docente, una herramienta creada por Salvador Almánzar para automatizar el pase de lista con códigos QR y gamificación.
 
 No se preocupe por la parte técnica: ¡yo me encargaré de todo!
 Para personalizar su sistema, por favor indíqueme:
@@ -59,7 +59,7 @@ Una vez autenticado:
      institucion: "INSTITUCION",
      materia: "NOMBRE_MATERIA",
      anio: new Date().getFullYear(),
-     creditos: "Desarrollado originalmente por Salvador Almánzar | IPN ESCA"
+     creditos: "Desarrollado originalmente por Salvador Almánzar"
    };
    ```
 2. Ejecuta el despliegue con:

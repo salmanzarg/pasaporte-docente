@@ -7,8 +7,7 @@
 [![Agentic-First](https://img.shields.io/badge/Instalación-Agentic%20(1--Clic)-purple.svg)](#)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Salvador%20Alm%C3%A1nzar-0A66C2.svg?logo=linkedin)](https://www.linkedin.com/in/salvador-almanzar/)
 
-> **Creado y conceptualizado por el Prof. Salvador Almánzar**  
-> *Instituto Politécnico Nacional (IPN) — Escuela Superior de Comercio y Administración (ESCA Santo Tomás)*
+> **Creado, diseñado y desarrollado de forma independiente por Salvador Almánzar**
 
 ---
 
@@ -112,17 +111,17 @@ npx -y firebase-tools@latest deploy --only hosting,firestore
 
 ---
 
-## 👨‍🏫 Autoría y Créditos
+## 👨‍💻 Autoría y Propiedad Intelectual
 
-Este sistema fue concebido, diseñado y desarrollado originalmente por el **Prof. Salvador Almánzar**, docente en la **Escuela Superior de Comercio y Administración (ESCA Santo Tomás)** del **Instituto Politécnico Nacional (IPN)**, México.
+Este sistema es una obra de software concebida, diseñada y desarrollada de manera independiente por **Salvador Almánzar** con recursos propios.
 
+* **Creador y Titular de Derechos:** Salvador Almánzar
 * **Perfil Profesional y Contacto:** [LinkedIn - Salvador Almánzar](https://www.linkedin.com/in/salvador-almanzar/)
-* **Objetivo Académico:** Impulsar la innovación pedagógica en la educación superior mediante herramientas digitales accesibles que devuelvan el tiempo valioso de clase a los docentes.
-* **Colaboraciones:** Abierto a conferencias, talleres de transformación digital docente e implementaciones institucionales.
+* **Colaboraciones:** Abierto a talleres, consultoría educativa e implementaciones para colegios y universidades.
 
 ---
 
 ## 📜 Licencia
 
 Este proyecto está bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.  
-Eres libre de utilizarlo, modificarlo y compartirlo en tu aula escolar, manteniendo siempre el aviso de copyright y la atribución al autor original (**Prof. Salvador Almánzar**).
+Eres libre de utilizarlo, modificarlo y compartirlo, manteniendo siempre el aviso de copyright y la atribución al autor original (**Salvador Almánzar**).

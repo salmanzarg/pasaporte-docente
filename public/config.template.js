@@ -1,5 +1,5 @@
 // Plantilla de configuración inicial para Pasaporte Docente
-// Creado por Salvador Almánzar | IPN ESCA Santo Tomás
+// Creado de manera independiente por Salvador Almánzar
 
 window.DOCENTE_CONFIG = {
   profesor: "Prof. Salvador Almánzar",
