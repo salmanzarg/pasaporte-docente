@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ERAP IPN | Pasaporte Diplomático Digital del Alumno</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pasaporte ERAP">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="https://img.icons8.com/color/192/passport.png">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <script src="qrcode-generator.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400..800;1,400..800&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ipn-guinda: #6B1D2F;
+      --ipn-guinda-light: #8E2B40;
+      --pacific-blue: #0A192F;
+      --pacific-card: #10223D;
+      --gold-accent: #D4AF37;
+      --gold-light: #F3E5AB;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #070F1E;
+      color: #F1F5F9;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-mono, .badge-folio {
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+    .security-guilloche {
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
+        repeating-linear-gradient(45deg, rgba(30, 56, 91, 0.25) 0, rgba(30, 56, 91, 0.25) 1px, transparent 0, transparent 12px),
+        repeating-linear-gradient(-45deg, rgba(107, 29, 47, 0.2) 0, rgba(107, 29, 47, 0.2) 1px, transparent 0, transparent 12px);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-3 sm:p-6">
+
+  <!-- TOP HEADER INSTITUCIONAL -->
+  <header class="w-full max-w-lg text-center pt-2 pb-4 space-y-1.5 border-b border-slate-800">
+    <div class="flex items-center justify-center space-x-2 text-[11px] font-extrabold tracking-widest text-amber-400 uppercase">
+      <span class="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span>
+      <span>Instituto Politécnico Nacional</span>
+      <span class="text-slate-600">•</span>
+      <span>ESCA Santo Tomás</span>
+    </div>
+    <h1 class="text-lg sm:text-xl font-black text-white tracking-tight">
+      Portal del Alumno: Pasaporte Diplomático
+    </h1>
+    <p class="text-xs text-slate-400">
+      Estudios Regionales de Asia y el Pacífico • Cátedra Prof. Salvador Almánzar
+    </p>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="w-full max-w-lg my-4 space-y-4">
+
+    <!-- STEP 1: FORMULARIO DE REGISTRO (SI NO TIENE PASAPORTE) -->
+    <div id="formSection" class="bg-[#0E1E36] border border-[#203D66] rounded-2xl p-5 shadow-2xl space-y-4">
+      <div class="border-b border-slate-700/80 pb-3">
+        <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+          PASO 1 • REGISTRO OFICIAL
+        </span>
+        <h2 class="text-sm sm:text-base font-bold text-white mt-1">Genera tu Acreditación Ministerial</h2>
+        <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
+          Selecciona tu nombre del padrón oficial y tu gabinete asignado. Tu pasaporte digital con código QR te servirá para registrar tu asistencia diaria en clase.
+        </p>
+      </div>
+
+      <form id="passportForm" onsubmit="handlePassportSubmit(event)" class="space-y-3.5 text-xs">
+        <!-- Selector de Alumno -->
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">Nombre Completo del Alumno:</label>
+          <select id="studentSelect" onchange="onStudentSelectChange()" required class="w-full bg-[#142642] border border-[#284B7C] text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 font-medium">
+            <option value="">-- Selecciona tu nombre de la lista oficial (32 Alumnos) --</option>
+          </select>
+        </div>
+
+        <!-- Acceso Rápido para Alumnos Faltantes o No Listados -->
+        <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-[11px] gap-2">
+          <div class="flex items-center gap-1.5 text-amber-200">
+            <span>ℹ️</span>
+            <span>¿No encuentras tu nombre en la lista oficial?</span>
+          </div>
+          <button type="button" onclick="activateManualStudentEntry()" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-lg border border-amber-500/40 active:scale-95 transition-all shrink-0">
+            ✏️ Registrarme Aquí
+          </button>
+        </div>
+
+        <!-- Nombre manual si selecciona 'otro' -->
+        <div id="customNameField" class="hidden">
+          <label class="block text-slate-300 font-bold mb-1">Escribe tu Nombre Completo (Apellidos y Nombres):</label>
+          <input type="text" id="customStudentName" placeholder="Ej. Martínez Sánchez Laura Elena" class="w-full bg-[#12233E] border border-[#284B7C] text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400">
+        </div>
+
+        <!-- Selector de País -->
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">Gabinete / País Representado:</label>
+          <select id="countrySelect" required class="w-full bg-[#142642] border border-[#284B7C] text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 font-medium">
+            <option value="">-- Selecciona tu País de Asia-Pacífico --</option>
+            <option value="sg">🇸🇬 Singapur • Hub Financiero y Portuario</option>
+            <option value="in">🇮🇳 India • Corredor Tecnológico y Farmacéutico</option>
+            <option value="pk">🇵🇰 Pakistán • Corredor CPEC y Textil</option>
+            <option value="kr">🇰🇷 Corea del Sur • Semiconductores y Chaebols</option>
+            <option value="th">🇹🇭 Tailandia • Hub Automotriz ASEAN</option>
+            <option value="jp">🇯🇵 Japón • Innovación Robótica y Megainversión</option>
+            <option value="au">🇦🇺 Australia • Minería, Energía Limpia y RCEP</option>
+            <option value="cn">🇨🇳 China • Electromovilidad y Manufactura Global</option>
+            <option value="pendiente">🌐 Misión Diplomática ERAP (Por Asignar)</option>
+          </select>
+        </div>
+
+        <!-- Selector de Rol Ministerial -->
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">Rol de Gobierno / Cartera Ministerial:</label>
+          <select id="roleSelect" required class="w-full bg-[#142642] border border-[#284B7C] text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 font-medium">
+            <option value="Primer Ministro">🏛️ Primer Ministro / Jefe de Gabinete</option>
+            <option value="Ministro de Comercio Exterior e Inversiones">📈 Ministro de Comercio Exterior e Inversiones</option>
+            <option value="Canciller de Asuntos Exteriores y Geopolítica">🌐 Canciller de Asuntos Exteriores y Geopolítica</option>
+            <option value="Ministro de Economía, Hacienda y Finanzas">💰 Ministro de Economía, Hacienda y Finanzas</option>
+            <option value="Secretario de Logística Portuaria, Aduanas y Transporte">🚢 Secretario de Logística Portuaria y Aduanas</option>
+            <option value="Ministro de Industria, Energía y Tecnología">⚡ Ministro de Industria, Energía y Tecnología</option>
+            <option value="Embajador Plenipotenciario en Asia-Pacífico">📜 Embajador Plenipotenciario en Asia-Pacífico</option>
+          </select>
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all mt-4">
+          <i data-lucide="award" class="w-4 h-4"></i>
+          <span>Generar y Activar Mi Pasaporte Digital</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- STEP 2: VISTA DEL PASAPORTE DIPLOMÁTICO GENERADO -->
+    <div id="passportDisplaySection" class="hidden space-y-4">
+      
+      <!-- INSTRUCTION BANNER -->
+      <div class="bg-emerald-950/70 border border-emerald-500/40 rounded-xl p-3 flex items-center space-x-3 text-xs text-emerald-200">
+        <span class="text-xl">✅</span>
+        <div>
+          <span class="font-bold block text-emerald-300">¡Pasaporte Digital Activo!</span>
+          <span>Presenta este código QR en cada clase al profesor para registrar tu asistencia en segundos.</span>
+        </div>
+      </div>
+
+      <!-- PASSPORT CARD (LISTA PARA DESCARGAR CON HTML2CANVAS) -->
+      <div id="studentPassportCard" class="w-full max-w-[420px] mx-auto rounded-2xl p-5 border-2 border-[#D4AF37] bg-gradient-to-b from-[#0A192F] via-[#10223D] to-[#070F1E] shadow-[0_12px_40px_rgba(0,0,0,0.85)] relative overflow-hidden security-guilloche">
+        
+        <!-- Perímetro dorado de seguridad -->
+        <div class="absolute inset-1 rounded-xl border border-amber-500/30 pointer-events-none"></div>
+
+        <!-- Cabecera Institucional -->
+        <div class="text-center border-b border-amber-500/40 pb-2.5 relative z-10 space-y-0.5">
+          <div class="flex items-center justify-center gap-1.5 text-[9px] font-black uppercase text-amber-300 tracking-wider">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+            <span>SEP • IPN | Instituto Politécnico Nacional</span>
+          </div>
+          <div class="text-[10px] font-bold text-slate-200 uppercase tracking-tight">
+            ESCA Unidad Santo Tomás • Plan 2022
+          </div>
+          <div class="inline-flex items-center px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-500/40 text-[9px] font-extrabold text-amber-300 mt-1">
+            ACREDITACIÓN DIPLOMÁTICA OFICIAL • ERAP 2026-1
+          </div>
+        </div>
+
+        <!-- Cuerpo Central del Pasaporte -->
+        <div class="py-3.5 space-y-3 relative z-10">
+          
+          <!-- Avatar + Datos Principales -->
+          <div class="flex items-center space-x-3">
+            <div id="cardFlagContainer" class="w-16 h-16 rounded-xl bg-gradient-to-tr from-[#1E385B] to-[#0A192F] border-2 border-amber-400 flex items-center justify-center shadow-lg text-3xl shrink-0">
+              🇸🇬
+            </div>
+            <div class="overflow-hidden">
+              <span class="text-[9px] font-bold text-amber-400 uppercase tracking-widest block" id="cardCountryName">Singapur</span>
+              <h3 class="text-sm font-black text-white leading-snug break-words" id="cardStudentName">Nombre del Alumno</h3>
+              <p class="text-[11px] font-semibold text-slate-300 mt-0.5" id="cardRoleName">Primer Ministro</p>
+            </div>
+          </div>
+
+          <!-- Bloque de Seguridad: Folio + QR -->
+          <div class="bg-[#070F1E]/90 border border-slate-700/80 rounded-xl p-3 flex items-center justify-between">
+            <div class="space-y-1">
+              <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Folio Criptográfico:</span>
+              <div class="font-mono text-xs font-black text-amber-300 tracking-wider" id="cardFolio">IPN-ESCA-ERAP-2026-01</div>
+              <div class="text-[9px] text-slate-400 flex items-center gap-1 pt-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                <span>Estado: <strong class="text-emerald-300 font-bold">Oficial Activo</strong></span>
+              </div>
+            </div>
+
+            <!-- Contenedor del QR de Autenticación -->
+            <div class="bg-white p-1.5 rounded-lg shadow-md shrink-0 border border-slate-200">
+              <div id="passportQrCode"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pie de la Credencial -->
+        <div class="border-t border-amber-500/40 pt-2 text-center relative z-10 space-y-0.5">
+          <div class="text-[8px] font-semibold text-slate-400 uppercase italic">
+            «La Técnica al Servicio de la Patria»
+          </div>
+          <div class="text-[9px] font-bold text-amber-300">
+            Prof. Salvador Almánzar • Cátedra ERAP LNI
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTONES DE ACCIÓN DEL ALUMNO -->
+      <div class="space-y-2 pt-2">
+        <button onclick="downloadPassportPng()" id="btnDownload" class="w-full py-3 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>📥 Guardar / Descargar Pasaporte en PNG</span>
+        </button>
+
+        <!-- Botón Vincular a Apple Wallet / Google Wallet -->
+        <button onclick="openWalletModal()" class="w-full py-3 bg-gradient-to-r from-slate-900 via-[#10223D] to-slate-900 hover:from-slate-800 hover:to-[#173055] text-white font-black rounded-xl text-xs sm:text-sm border border-amber-400/60 shadow-[0_4px_20px_rgba(212,175,55,0.2)] flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i data-lucide="wallet" class="w-4 h-4 text-amber-400"></i>
+          <span>📲 Agregar a Apple Wallet / Google Wallet</span>
+        </button>
+
+        <button onclick="openFullscreenQr()" class="w-full py-2.5 bg-[#142642] hover:bg-[#1E385B] text-amber-300 border border-[#284B7C] font-bold rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+          <span>🔆 Mostrar QR en Pantalla Completa (Alto Brillo)</span>
+        </button>
+
+        <button onclick="enableEditing()" class="w-full py-2 text-slate-400 hover:text-slate-200 text-xs font-semibold text-center block">
+          ✏️ Actualizar mis datos o cambiar de país
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL: GUARDAR / DESCARGAR IMAGEN DEL PASAPORTE (COMPATIBLE IPHONE / IPAD / ANDROID) -->
+  <div id="imageSaveModal" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-[#0E1E36] border-2 border-amber-500/60 rounded-3xl max-w-md w-full p-4 sm:p-6 space-y-4 shadow-[0_20px_60px_rgba(0,0,0,0.95)] text-center relative">
+      <button onclick="closeImageSaveModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white text-lg w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">✕</button>
+      
+      <div class="space-y-1">
+        <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase tracking-wider">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+          <span>Pasaporte Generado Exitosamente</span>
+        </div>
+        <h3 class="text-base sm:text-lg font-black text-white">Guarda tu Pasaporte Oficial</h3>
+        <p class="text-xs text-slate-300">
+          Tu documento oficial en alta resolución está listo:
+        </p>
+      </div>
+
+      <!-- Imagen Renderizada Lista para Guardar -->
+      <div class="relative bg-slate-950 p-2 rounded-2xl border border-amber-500/30 shadow-inner flex justify-center items-center">
+        <img id="imageSavePreview" src="" alt="Pasaporte Diplomático ERAP IPN" class="max-h-[46vh] w-auto rounded-xl shadow-lg object-contain">
+      </div>
+
+      <!-- Alerta Táctica para iPhone / Safari -->
+      <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-left space-y-1">
+        <div class="flex items-center gap-1.5 text-amber-300 font-bold text-xs">
+          <span>🍎</span>
+          <span>¿Usas iPhone, iPad o Android?</span>
+        </div>
+        <p class="text-[11px] text-slate-300 leading-snug">
+          • <strong>iPhone / iPad:</strong> Pulsa el botón verde <em>«📲 Guardar en Fotos»</em> y selecciona <strong>«Guardar imagen»</strong> en el menú, o mantén presionada la imagen arriba 1 segundo y pulsa <strong>«Guardar en Fotos»</strong>.<br>
+          • <strong>Android / PC:</strong> Se descarga automáticamente o pulsa <em>«📥 Descargar Archivo PNG»</em>.
+        </p>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="space-y-2 pt-1">
+        <button id="btnShareModal" onclick="triggerNativeShareFromModal()" class="w-full py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-xl text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i data-lucide="share-2" class="w-4 h-4"></i>
+          <span>📲 Guardar en Fotos / Galería (iPhone & Android)</span>
+        </button>
+
+        <a id="btnDirectDownloadModal" href="#" download="" class="w-full py-2.5 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 shadow transition-all">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>📥 Descargar Archivo PNG</span>
+        </a>
+
+        <button onclick="openImageInNewTab()" class="w-full py-2 bg-[#142642] hover:bg-[#1E385B] text-sky-300 border border-sky-500/30 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          <span>🌐 Abrir Imagen en Pestaña Nueva (Mantener Presionada)</span>
+        </button>
+
+        <button onclick="closeImageSaveModal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold active:scale-95">
+          ✕ Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AGREGAR A APPLE WALLET / GOOGLE WALLET -->
+  <div id="walletModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-[#0E1E36] border-2 border-amber-500/50 rounded-3xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-[0_20px_60px_rgba(0,0,0,0.9)] text-xs relative">
+      <button onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">✕</button>
+
+      <!-- Modal Header -->
+      <div class="border-b border-slate-700/80 pb-3 space-y-1">
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
+          VINCULACIÓN DIGITAL OFICIAL
+        </span>
+        <h3 class="text-base font-black text-white flex items-center gap-1.5">
+          <span>📲 Tu Pasaporte en tu Billetera Móvil</span>
+        </h3>
+        <p class="text-slate-400 text-[11px]">
+          Lleva tu acreditación ministerial y tu código QR de asistencia en tu iPhone o Android.
+        </p>
+      </div>
+
+      <!-- Segmented Platform Selector: iPhone vs Android -->
+      <div class="flex items-center space-x-2 bg-[#091527] p-1.5 rounded-2xl border border-[#1E385B]">
+        <button id="btnWalletIos" onclick="switchWalletPlatform('ios')" class="flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all bg-gradient-to-r from-slate-700 to-slate-900 text-white border border-slate-600 shadow flex items-center justify-center gap-1.5 active:scale-95">
+          <span>🍎 iPhone (iOS)</span>
+        </button>
+        <button id="btnWalletAndroid" onclick="switchWalletPlatform('android')" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5 active:scale-95">
+          <span>🤖 Android</span>
+        </button>
+      </div>
+
+      <!-- SECCIÓN IPHONE (APPLE WALLET) -->
+      <div id="walletSectionIos" class="space-y-3">
+        <!-- Aviso Informativo sobre Apple Wallet Nativo -->
+        <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-slate-300 text-[11px] leading-relaxed space-y-1">
+          <div class="flex items-center gap-1.5 text-amber-300 font-bold">
+            <span>ℹ️</span>
+            <span>Seguridad de Apple Wallet en iOS</span>
+          </div>
+          <p>
+            Apple exige que los archivos <code class="text-amber-200 font-mono">.pkpass</code> en su app Wallet nativa estén firmados con un certificado de pago de <em>Apple Developer ($99 USD/año)</em>. Sin él, Safari muestra <em>«Safari no puede descargar este archivo»</em>.
+          </p>
+          <p class="text-slate-400 text-[10px]">
+            Para que no tengas que pagar ni instalar nada complicado, te ofrecemos las <strong>2 soluciones 100% funcionales para tu iPhone:</strong>
+          </p>
+        </div>
+
+        <!-- Opción 1 (Recomendada): Acceso Rápido en Pantalla de Inicio (Web Wallet) -->
+        <div class="p-3.5 rounded-2xl bg-gradient-to-r from-[#0C203E] via-[#0D264A] to-[#0A192F] border border-sky-500/50 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">⭐</span>
+              <div>
+                <h4 class="font-bold text-sky-200 text-xs">Opción 1: Tarjeta en Pantalla de Inicio (Web Wallet)</h4>
+                <p class="text-[10px] text-sky-300/80">Recomendado Oficial • 1 Toque • Sin instalar apps</p>
+              </div>
+            </div>
+            <span class="text-[9px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40">
+              100% Nativo
+            </span>
+          </div>
+          <div class="space-y-1.5 text-[11px] text-slate-200">
+            <div class="flex items-start space-x-2">
+              <span class="font-mono text-amber-300 font-bold">1.</span>
+              <span>En Safari en tu iPhone, pulsa el botón <strong>Compartir</strong> (<i data-lucide="share" class="w-3.5 h-3.5 inline text-sky-400"></i> en la barra inferior).</span>
+            </div>
+            <div class="flex items-start space-x-2">
+              <span class="font-mono text-amber-300 font-bold">2.</span>
+              <span>Desliza hacia abajo y selecciona <strong>"Agregar al inicio"</strong> (<i data-lucide="plus-square" class="w-3.5 h-3.5 inline text-emerald-400"></i>).</span>
+            </div>
+            <div class="flex items-start space-x-2">
+              <span class="font-mono text-amber-300 font-bold">3.</span>
+              <span>Pulsa <strong>"Agregar"</strong>. ¡Se colocará el ícono dorado de ERAP en tu iPhone!</span>
+            </div>
+          </div>
+          <div class="pt-1 border-t border-sky-500/30 flex items-center justify-between text-[10px] text-sky-300">
+            <span>✨ Abre a pantalla completa, con brillo máximo y sin internet.</span>
+            <button onclick="copyPassportDirectLink()" class="px-2.5 py-1 bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 rounded-lg border border-sky-400/40 font-bold active:scale-95 transition-all flex items-center gap-1">
+              <i data-lucide="copy" class="w-3 h-3"></i>
+              <span>Copiar Enlace</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Opción 2: Pass2U Wallet (App Gratuita en App Store) -->
+        <div class="p-3.5 rounded-2xl bg-[#091527] border border-[#1E385B] space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">🎟️</span>
+              <div>
+                <h4 class="font-bold text-white text-xs">Opción 2: Pass2U Wallet (Tarjetero de iPhone)</h4>
+                <p class="text-[10px] text-slate-400">App gratuita #1 en App Store para pases en iOS</p>
+              </div>
+            </div>
+            <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+              App Gratuita
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            Si deseas guardar tu pasaporte dentro de una aplicación de billetera en tu iPhone sin costo:
+          </p>
+          <div class="space-y-1 text-[11px] text-slate-300">
+            <div class="flex items-start space-x-1.5">
+              <span class="text-amber-300 font-bold">1.</span>
+              <span>Instala gratis <strong>Pass2U Wallet</strong> desde la App Store.</span>
+            </div>
+            <div class="flex items-start space-x-1.5">
+              <span class="text-amber-300 font-bold">2.</span>
+              <span>Abre Pass2U ➔ Pulsa el botón <strong>«+»</strong> ➔ <strong>«Escanear el código de barras»</strong> ➔ Escanea el QR de tu pasaporte ERAP y pulsa «Guardar».</span>
+            </div>
+          </div>
+          <a href="https://apps.apple.com/app/pass2u-wallet-cards-coupons/id1142114995" target="_blank" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all border border-amber-400/40">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            <span>Ver Pass2U Wallet en App Store (Gratis)</span>
+          </a>
+        </div>
+
+        <!-- Opción 3: Descarga de archivo .pkpass -->
+        <div class="p-3 rounded-2xl bg-[#091527] border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">Descargar Archivo .pkpass</span>
+            <span class="text-[9px] text-slate-500">Para Mac / Pass2U / AirDrop</span>
+          </div>
+          <button onclick="downloadStudentPkPass()" class="w-full py-2 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-slate-700 active:scale-95 transition-all">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Descargar .pkpass (Exportación estándar)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SECCIÓN ANDROID (GOOGLE WALLET) -->
+      <div id="walletSectionAndroid" class="hidden space-y-3">
+        <!-- Tarjeta 1: Google Wallet / WalletPasses -->
+        <div class="p-3.5 rounded-2xl bg-[#091527] border border-[#1E385B] space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">💳</span>
+              <div>
+                <h4 class="font-bold text-white text-xs">Importar a Google Wallet</h4>
+                <p class="text-[10px] text-slate-400">Android 14+ / WalletPasses / PassAndroid</p>
+              </div>
+            </div>
+            <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+              Compatible
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            Descarga el archivo <code class="text-amber-300 font-mono">.pkpass</code>. En dispositivos Android modernos, el sistema lo importa directamente a <strong>Google Wallet</strong> o mediante lectores universales como <em>WalletPasses</em>.
+          </p>
+          <button onclick="downloadStudentPkPass()" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 shadow transition-all">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Descargar e Importar a Google Wallet</span>
+          </button>
+          <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-800">
+            💡 <em>Al abrir el archivo, pulsa "Abrir con Google Wallet" o "WalletPasses" para guardar tu tarjeta en tu monedero de Android.</em>
+          </div>
+        </div>
+
+        <!-- Tarjeta 2: Instalación PWA en Chrome -->
+        <div class="p-3.5 rounded-2xl bg-gradient-to-r from-[#0C203E] via-[#0D264A] to-[#0A192F] border border-sky-500/40 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">⭐</span>
+              <div>
+                <h4 class="font-bold text-sky-200 text-xs">Instalar Tarjeta Rápida (Chrome)</h4>
+                <p class="text-[10px] text-sky-300/80">Recomendado • Acceso sin internet</p>
+              </div>
+            </div>
+            <span class="text-[9px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40">
+              PWA
+            </span>
+          </div>
+          <div class="space-y-1.5 text-[11px] text-slate-200">
+            <div class="flex items-start space-x-2">
+              <span class="font-mono text-amber-300 font-bold">1.</span>
+              <span>En Google Chrome, toca el menú de tres puntos <strong>(⋮)</strong> arriba a la derecha.</span>
+            </div>
+            <div class="flex items-start space-x-2">
+              <span class="font-mono text-amber-300 font-bold">2.</span>
+              <span>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.</span>
+            </div>
+            <div class="flex items-start space-x-2">
+              <span class="font-mono text-amber-300 font-bold">3.</span>
+              <span>Tendrás tu tarjeta ERAP IPN lista en tu pantalla de inicio para entrar al aula y pasar lista.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón de Cerrar Modal -->
+      <button onclick="closeWalletModal()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs active:scale-95 transition-all">
+        Entendido / Cerrar
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL QR PANTALLA COMPLETA -->
+  <div id="fullscreenQrModal" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md hidden flex flex-col items-center justify-center p-6 text-center space-y-4">
+    <div class="bg-white p-4 rounded-2xl shadow-2xl max-w-xs w-full flex flex-col items-center">
+      <div id="fsBigQrCode"></div>
+      <span class="text-xs font-black text-slate-900 mt-2 block" id="fsStudentName">Alumno</span>
+      <span class="text-[10px] font-bold text-slate-600" id="fsStudentCountry">País</span>
+    </div>
+    <div class="text-slate-300 text-xs max-w-xs">
+      Muestra este código al escáner del profesor para registrar tu asistencia del día.
+    </div>
+    <button onclick="closeFullscreenQr()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl active:scale-95">
+      ✕ Cerrar
+    </button>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="w-full max-w-lg text-center text-[10px] text-slate-500 py-3 border-t border-slate-800/80 space-y-0.5">
+    <div class="font-medium text-slate-400">ERAP IPN • Portal del Alumno • ESCA Unidad Santo Tomás</div>
+    <div class="text-[9px] text-slate-600">Acreditación Diplomática Oficial • Plan 2022</div>
+  </footer>
+
+  <script>
+    // PADRÓN OFICIAL DE ALUMNOS (DEPURADO)
+    const OFFICIAL_STUDENTS = [
+      { id: "stu-02", name: "Alguera Acosta Ricardo Alejandro" },
+      { id: "stu-03", name: "Álvarez Nieves Pedro Saúl" },
+      { id: "stu-04", name: "Bartolo Martínez Édgar Arturo" },
+      { id: "stu-05", name: "Cortés Hanna Daniela" },
+      { id: "stu-06", name: "Díaz Ceballos Fior Ximena" },
+      { id: "stu-07", name: "Domínguez Rodríguez Valeria" },
+      { id: "stu-08", name: "Escobar García Samantha" },
+      { id: "stu-09", name: "García González Melanie" },
+      { id: "stu-10", name: "González Ciriaco Sergio" },
+      { id: "stu-11", name: "Hernández Jiménez Itzel Sarahí" },
+      { id: "stu-12", name: "Hernández Martínez Miriam Isabella" },
+      { id: "stu-13", name: "Herrera Gómez Óscar" },
+      { id: "stu-14", name: "Jasso Montes de Oca Nadir" },
+      { id: "stu-15", name: "Jiménez Acevez María Fernanda" },
+      { id: "stu-16", name: "Juárez Cervantes Diana Paola" },
+      { id: "stu-17", name: "Lugo Godínez Víctor" },
+      { id: "stu-18", name: "Martínez Cancino Gael Yamil" },
+      { id: "stu-19", name: "Martínez Domínguez Carlos" },
+      { id: "stu-20", name: "Medina Acosta Luz Fernanda" },
+      { id: "stu-21", name: "Mendoza Felipe Fernanda" },
+      { id: "stu-22", name: "Merlos Esperioeta Jaquieline" },
+      { id: "stu-23", name: "Miguel Marín Alejandro" },
+      { id: "stu-24", name: "Mosqueda López Héctor" },
+      { id: "stu-25", name: "Olvera Soto Jesús Alejandro" },
+      { id: "stu-26", name: "Oribe Arce Joaquín Emmanuel" },
+      { id: "stu-27", name: "Peláez Llamas Karen Michelle" },
+      { id: "stu-28", name: "Peña Contreras Dennisse" },
+      { id: "stu-29", name: "Pérez Hernández Ariana" },
+      { id: "stu-30", name: "Pérez Tepozán Fátima" },
+      { id: "stu-31", name: "Rebollar Santiago Leticia" },
+      { id: "stu-32", name: "Román Romero Lucía Camila" },
+      { id: "stu-33", name: "Villanueva Martínez Alejandra Guadalupe" }
+    ];
+
+    const COUNTRIES_INFO = {
+      sg: { name: "Singapur", flag: "🇸🇬" },
+      in: { name: "India", flag: "🇮🇳" },
+      pk: { name: "Pakistán", flag: "🇵🇰" },
+      kr: { name: "Corea del Sur", flag: "🇰🇷" },
+      th: { name: "Tailandia", flag: "🇹🇭" },
+      jp: { name: "Japón", flag: "🇯🇵" },
+      au: { name: "Australia", flag: "🇦🇺" },
+      cn: { name: "China", flag: "🇨🇳" },
+      pendiente: { name: "Misión Diplomática ERAP", flag: "🌐" }
+    };
+
+    let activePassport = null;
+
+    function populateStudentSelect() {
+      const sel = document.getElementById('studentSelect');
+      sel.innerHTML = '<option value="">-- Selecciona tu nombre de la lista oficial (32 Alumnos) --</option>';
+      OFFICIAL_STUDENTS.forEach((s, idx) => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${String(idx + 1).padStart(2, '0')}. ${s.name}`;
+        sel.appendChild(opt);
+      });
+      const optOtro = document.createElement('option');
+      optOtro.value = "otro";
+      optOtro.textContent = "✏️ Otro Alumno / Registro Especial...";
+      sel.appendChild(optOtro);
+    }
+
+    function activateManualStudentEntry() {
+      const sel = document.getElementById('studentSelect');
+      if (sel) {
+        sel.value = 'otro';
+        onStudentSelectChange();
+        const customInp = document.getElementById('customStudentName');
+        if (customInp) {
+          customInp.focus();
+          customInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+
+    function onStudentSelectChange() {
+      const val = document.getElementById('studentSelect').value;
+      const customField = document.getElementById('customNameField');
+      if (val === 'otro') {
+        customField.classList.remove('hidden');
+        document.getElementById('customStudentName').required = true;
+      } else {
+        customField.classList.add('hidden');
+        document.getElementById('customStudentName').required = false;
+      }
+    }
+
+    function handlePassportSubmit(e) {
+      e.preventDefault();
+      const selVal = document.getElementById('studentSelect').value;
+      let stuId = selVal;
+      let stuName = "";
+
+      if (selVal === 'otro') {
+        stuName = document.getElementById('customStudentName').value.trim();
+        stuId = "stu-ext-" + Date.now().toString().slice(-4);
+      } else {
+        const found = OFFICIAL_STUDENTS.find(s => s.id === selVal);
+        if (found) {
+          stuName = found.name;
+        } else {
+          stuName = "Estudiante ERAP";
+        }
+      }
+
+      const countryId = document.getElementById('countrySelect').value;
+      const role = document.getElementById('roleSelect').value;
+      const indexNum = OFFICIAL_STUDENTS.findIndex(s => s.id === stuId);
+      const folio = `IPN-ESCA-ERAP-2026-${String(indexNum >= 0 ? indexNum + 1 : 99).padStart(2, '0')}`;
+
+      // Payload estandarizado y criptográfico
+      const passportData = {
+        v: 1,
+        type: "ERAP_PASSPORT",
+        id: stuId,
+        name: stuName,
+        countryId: countryId,
+        role: role,
+        folio: folio,
+        ts: Date.now()
+      };
+
+      // Guardar en localStorage del celular del alumno
+      localStorage.setItem('erap_student_passport', JSON.stringify(passportData));
+      activePassport = passportData;
+
+      // Disparar confeti IPN
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 60,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#6B1D2F', '#D4AF37', '#FFFFFF']
+        });
+      }
+
+      renderPassportView(passportData);
+    }
+
+    function renderPassportView(data) {
+      document.getElementById('formSection').classList.add('hidden');
+      document.getElementById('passportDisplaySection').classList.remove('hidden');
+
+      const cInfo = COUNTRIES_INFO[data.countryId] || COUNTRIES_INFO.pendiente;
+
+      document.getElementById('cardFlagContainer').textContent = cInfo.flag;
+      document.getElementById('cardCountryName').textContent = cInfo.name;
+      document.getElementById('cardStudentName').textContent = data.name;
+      document.getElementById('cardRoleName').textContent = data.role;
+      document.getElementById('cardFolio').textContent = data.folio;
+
+      // Generar QR de 84x84 y 220x220 con motor universal (inmune a nombres largos y acentos)
+      const qrContainer = document.getElementById('passportQrCode');
+      const fsContainer = document.getElementById('fsBigQrCode');
+
+      // QR Payload: Formato JSON estructurado para el escáner del catedrático
+      const qrPayload = JSON.stringify({
+        t: "ERAP",
+        id: data.id,
+        n: data.name,
+        c: data.countryId,
+        r: data.role,
+        f: data.folio
+      });
+
+      renderUnifiedQrCode(qrContainer, qrPayload, 84, { level: 'M' });
+      renderUnifiedQrCode(fsContainer, qrPayload, 220, { level: 'M' });
+      document.getElementById('fsStudentName').textContent = data.name;
+      // Actualizar URL con el identificador único para que "Agregar a Pantalla de Inicio" en iPhone guarde su pasaporte directamente
+      try {
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('id', data.id);
+        window.history.replaceState({}, '', currentUrl);
+      } catch (e) {}
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // ==========================================
+    // MOTOR UNIVERSAL DE CÓDIGOS QR (COMPATIBLE UTF-8, ACENTOS Y NOMBRES LARGOS)
+    // ==========================================
+    function renderUnifiedQrCode(container, text, size = 100, options = {}) {
+      if (!container) return;
+      container.innerHTML = '';
+
+      // 1. Motor Primario: qrcode-generator (Kazuhiko Arase) - soporta auto-detección y UTF-8
+      try {
+        if (typeof qrcode === 'function') {
+          const qr = qrcode(0, options.level || 'M');
+          qr.addData(text);
+          qr.make();
+          const cellSize = Math.max(2, Math.floor(size / qr.getModuleCount()));
+          const imgTag = qr.createImgTag(cellSize, 0);
+          container.innerHTML = imgTag;
+          const imgEl = container.querySelector('img');
+          if (imgEl) {
+            imgEl.style.width = size + 'px';
+            imgEl.style.height = size + 'px';
+            imgEl.style.display = 'block';
+            imgEl.style.margin = '0 auto';
+            imgEl.alt = 'Código QR de Asistencia ERAP';
+            imgEl.className = 'rounded object-contain';
+          }
+          return;
+        }
+      } catch (err) {
+        console.warn("Fallo motor primario qrcode-generator:", err);
+      }
+
+      // 2. Motor Secundario: QRCode clásico
+      try {
+        if (typeof QRCode !== 'undefined') {
+          new QRCode(container, {
+            text: text,
+            width: size,
+            height: size,
+            colorDark: options.colorDark || "#0A192F",
+            colorLight: options.colorLight || "#FFFFFF",
+            correctLevel: (options.level === 'L' && QRCode.CorrectLevel) ? QRCode.CorrectLevel.L : (QRCode.CorrectLevel ? QRCode.CorrectLevel.M : 1)
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn("Fallo motor secundario QRCode:", err);
+      }
+
+      // 3. Motor Terciario: Respaldo vía API externa
+      const safeText = encodeURIComponent(text);
+      container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${safeText}&color=0A192F" style="width:${size}px; height:${size}px; display:block; margin:0 auto;" class="rounded object-contain" alt="QR ERAP">`;
+    }
+
+    function enableEditing() {
+      document.getElementById('passportDisplaySection').classList.add('hidden');
+      document.getElementById('formSection').classList.remove('hidden');
+      if (activePassport) {
+        if (OFFICIAL_STUDENTS.some(s => s.id === activePassport.id)) {
+          document.getElementById('studentSelect').value = activePassport.id;
+        } else {
+          document.getElementById('studentSelect').value = "otro";
+          document.getElementById('customNameField').classList.remove('hidden');
+          document.getElementById('customStudentName').value = activePassport.name;
+        }
+        document.getElementById('countrySelect').value = activePassport.countryId;
+        document.getElementById('roleSelect').value = activePassport.role;
+      }
+    }
+
+    let currentPassportBlob = null;
+    let currentPassportFileName = 'Pasaporte_ERAP.png';
+
+    async function downloadPassportPng() {
+      const btn = document.getElementById('btnDownload');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<span>⏳ Generando PNG oficial...</span>`;
+      btn.disabled = true;
+
+      try {
+        const card = document.getElementById('studentPassportCard');
+        const canvas = await html2canvas(card, {
+          scale: 3,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        const safeName = (activePassport.name || 'Alumno').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ_-]/g, '_');
+        currentPassportFileName = `Pasaporte_Diplomatico_ERAP_${safeName}.png`;
+
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            alert("No se pudo generar la imagen. Toma una captura de pantalla de tu pasaporte.");
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            return;
+          }
+
+          currentPassportBlob = blob;
+          const file = new File([blob], currentPassportFileName, { type: 'image/png' });
+
+          // Si es Android o Computadora (PC/Mac), disparamos descarga directa automática a la carpeta de descargas/galería
+          const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+          if (!isIos) {
+            try {
+              const dlA = document.createElement('a');
+              dlA.href = URL.createObjectURL(blob);
+              dlA.download = currentPassportFileName;
+              document.body.appendChild(dlA);
+              dlA.click();
+              document.body.removeChild(dlA);
+            } catch (e) {
+              console.warn("Descarga directa no permitida:", e);
+            }
+          }
+
+          // Abrir el Modal de Guardado oficial (inmune a bloqueos de Safari y con imagen visible lista para Fotos)
+          openImageSaveModal(blob, currentPassportFileName);
+
+          if (typeof confetti === 'function') {
+            confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#6B1D2F', '#D4AF37', '#FFFFFF'] });
+          }
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+          if (window.lucide) lucide.createIcons();
+        }, 'image/png');
+
+      } catch (err) {
+        console.error("Error generando PNG:", err);
+        alert("Hubo un detalle al exportar la imagen. Puedes tomar captura de pantalla de tu pasaporte.");
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function openImageSaveModal(blob, fileName) {
+      const modal = document.getElementById('imageSaveModal');
+      const img = document.getElementById('imageSavePreview');
+      const dlLink = document.getElementById('btnDirectDownloadModal');
+      
+      const blobUrl = URL.createObjectURL(blob);
+      img.src = blobUrl;
+      dlLink.href = blobUrl;
+      dlLink.download = fileName;
+
+      modal.classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeImageSaveModal() {
+      const modal = document.getElementById('imageSaveModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function triggerNativeShareFromModal() {
+      if (!currentPassportBlob) return;
+      const file = new File([currentPassportBlob], currentPassportFileName, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: 'Pasaporte Diplomático ERAP IPN',
+            text: `Pasaporte Oficial ERAP 2026 - ${activePassport.name}`,
+            files: [file]
+          });
+        } catch (e) {
+          if (e.name !== 'AbortError') {
+            alert("💡 En el menú desplegado, selecciona 'Guardar imagen' para tenerla en tu carrete, o mantén presionada la imagen.");
+          }
+        }
+      } else {
+        // En navegadores que no soportan share de archivos:
+        document.getElementById('btnDirectDownloadModal').click();
+      }
+    }
+
+    function openImageInNewTab() {
+      if (!currentPassportBlob) return;
+      const url = URL.createObjectURL(currentPassportBlob);
+      window.open(url, '_blank');
+    }
+
+    function copyPassportDirectLink() {
+      const u = new URL(window.location.origin + window.location.pathname);
+      if (activePassport) {
+        u.searchParams.set('id', activePassport.id);
+      }
+      navigator.clipboard.writeText(u.toString()).then(() => {
+        alert("✅ Enlace directo de tu pasaporte copiado al portapapeles:\n" + u.toString());
+      }).catch(() => {
+        prompt("Copia tu enlace directo:", u.toString());
+      });
+    }
+
+    function openFullscreenQr() {
+      document.getElementById('fullscreenQrModal').classList.remove('hidden');
+    }
+
+    function closeFullscreenQr() {
+      document.getElementById('fullscreenQrModal').classList.add('hidden');
+    }
+
+    // ==========================================
+    // MÓDULO WALLET (APPLE WALLET & GOOGLE WALLET)
+    // ==========================================
+    function openWalletModal() {
+      const modal = document.getElementById('walletModal');
+      if (modal) modal.classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeWalletModal() {
+      const modal = document.getElementById('walletModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function switchWalletPlatform(platform) {
+      const btnIos = document.getElementById('btnWalletIos');
+      const btnAndroid = document.getElementById('btnWalletAndroid');
+      const secIos = document.getElementById('walletSectionIos');
+      const secAndroid = document.getElementById('walletSectionAndroid');
+
+      if (platform === 'ios') {
+        if (secIos) secIos.classList.remove('hidden');
+        if (secAndroid) secAndroid.classList.add('hidden');
+        if (btnIos) btnIos.className = "flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all bg-gradient-to-r from-slate-700 to-slate-900 text-white border border-slate-600 shadow flex items-center justify-center gap-1.5 active:scale-95";
+        if (btnAndroid) btnAndroid.className = "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5 active:scale-95";
+      } else {
+        if (secIos) secIos.classList.add('hidden');
+        if (secAndroid) secAndroid.classList.remove('hidden');
+        if (btnIos) btnIos.className = "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5 active:scale-95";
+        if (btnAndroid) btnAndroid.className = "flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all bg-gradient-to-r from-emerald-700 to-teal-900 text-white border border-emerald-600 shadow flex items-center justify-center gap-1.5 active:scale-95";
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    async function downloadStudentPkPass() {
+      if (!activePassport) {
+        alert("⚠️ Primero debes generar o tener activo tu pasaporte.");
+        return;
+      }
+      if (typeof JSZip === 'undefined') {
+        alert("⚠️ La biblioteca de Wallet se está cargando. Por favor reintenta en un momento.");
+        return;
+      }
+
+      try {
+        const zip = new JSZip();
+
+        // 1. Generate icon.png (58x58)
+        const iconCanvas = document.createElement('canvas');
+        iconCanvas.width = 58;
+        iconCanvas.height = 58;
+        const ictx = iconCanvas.getContext('2d');
+        ictx.fillStyle = '#6B1D2F'; // Guinda IPN
+        ictx.fillRect(0, 0, 58, 58);
+        ictx.fillStyle = '#D4AF37'; // Oro Politécnico
+        ictx.beginPath();
+        ictx.arc(29, 29, 24, 0, Math.PI * 2);
+        ictx.fill();
+        ictx.fillStyle = '#070F1E';
+        ictx.font = 'bold 16px sans-serif';
+        ictx.textAlign = 'center';
+        ictx.textBaseline = 'middle';
+        ictx.fillText('IPN', 29, 29);
+
+        const iconBlob = await new Promise(res => iconCanvas.toBlob(res, 'image/png'));
+        zip.file('icon.png', iconBlob);
+        zip.file('icon@2x.png', iconBlob);
+
+        // 2. Generate logo.png (160x50)
+        const logoCanvas = document.createElement('canvas');
+        logoCanvas.width = 160;
+        logoCanvas.height = 50;
+        const lctx = logoCanvas.getContext('2d');
+        lctx.fillStyle = '#0A192F';
+        lctx.fillRect(0, 0, 160, 50);
+        lctx.fillStyle = '#D4AF37';
+        lctx.font = 'bold 15px sans-serif';
+        lctx.textBaseline = 'middle';
+        lctx.fillText('IPN ESCA • ERAP', 8, 25);
+
+        const logoBlob = await new Promise(res => logoCanvas.toBlob(res, 'image/png'));
+        zip.file('logo.png', logoBlob);
+        zip.file('logo@2x.png', logoBlob);
+
+        // 3. Assemble pass.json
+        const countryData = COUNTRIES_INFO[activePassport.countryId] || { name: "Misión Diplomática", flag: "🌐" };
+        const passJson = {
+          formatVersion: 1,
+          passTypeIdentifier: "pass.mx.ipn.esca.erap",
+          serialNumber: activePassport.folio || `IPN-ESCA-ERAP-2026-${activePassport.id}`,
+          teamIdentifier: "IPNESCA2026",
+          organizationName: "IPN - ESCA Santo Tomás",
+          description: "Pasaporte Diplomático Oficial ERAP IPN",
+          foregroundColor: "rgb(255, 255, 255)",
+          backgroundColor: "rgb(10, 25, 47)",
+          labelColor: "rgb(212, 175, 55)",
+          logoText: "IPN ESCA • ERAP",
+          generic: {
+            primaryFields: [
+              {
+                key: "student",
+                label: "DIPLOMÁTICO TITULAR",
+                value: (activePassport.name || "ALUMNO").toUpperCase()
+              }
+            ],
+            secondaryFields: [
+              {
+                key: "country",
+                label: "GABINETE / NACIÓN",
+                value: `${countryData.flag} ${countryData.name}`
+              },
+              {
+                key: "role",
+                label: "CARTERA MINISTERIAL",
+                value: activePassport.role || "Primer Ministro"
+              }
+            ],
+            auxiliaryFields: [
+              {
+                key: "folio",
+                label: "FOLIO CRIPTOGRÁFICO",
+                value: activePassport.folio || "IPN-ESCA-2026"
+              },
+              {
+                key: "term",
+                label: "CICLO ESCOLAR",
+                value: "2026-1 • Plan 2022"
+              }
+            ],
+            backFields: [
+              {
+                key: "prof",
+                label: "CATEDRÁTICO TITULAR",
+                value: "Prof. Salvador Almánzar"
+              },
+              {
+                key: "institution",
+                label: "INSTITUCIÓN",
+                value: "Instituto Politécnico Nacional - Escuela Superior de Comercio y Administración Unidad Santo Tomás (ESCA)"
+              },
+              {
+                key: "rule80",
+                label: "ASISTENCIA REGLAMENTARIA (IPN)",
+                value: "Conforme al Reglamento General de Estudios del IPN, se requiere un mínimo de 80% de asistencia para conservar el derecho a Evaluación Ordinaria."
+              },
+              {
+                key: "usage",
+                label: "INSTRUCCIONES DE USO",
+                value: "Presenta este código QR diariamente al inicio de clase para el escaneo continuo en modo ráfaga del catedrático."
+              }
+            ]
+          },
+          barcodes: [
+            {
+              format: "PKBarcodeFormatQR",
+              message: JSON.stringify(activePassport.qrPayload || { id: activePassport.id, type: "ERAP" }),
+              messageEncoding: "iso-8859-1",
+              altText: activePassport.folio || "IPN-ESCA-ERAP-2026"
+            }
+          ],
+          barcode: {
+            format: "PKBarcodeFormatQR",
+            message: JSON.stringify(activePassport.qrPayload || { id: activePassport.id, type: "ERAP" }),
+            messageEncoding: "iso-8859-1",
+            altText: activePassport.folio || "IPN-ESCA-ERAP-2026"
+          }
+        };
+
+        zip.file('pass.json', JSON.stringify(passJson, null, 2));
+
+        const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.apple.pkpass' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const safeName = (activePassport.name || 'Alumno').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, '_');
+        a.download = `Pasaporte_Wallet_ERAP_${safeName}.pkpass`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 }, colors: ['#6B1D2F', '#D4AF37', '#38BDF8'] });
+        }
+      } catch (err) {
+        console.error("Error generando pase .pkpass:", err);
+        alert("Ocurrió un error al generar el archivo .pkpass.");
+      }
+    }
+
+    // ON DOM LOAD
+    window.addEventListener('DOMContentLoaded', () => {
+      populateStudentSelect();
+      if (window.lucide) lucide.createIcons();
+
+      // Revisar si viene parametro ?id= o ?cred= en la URL (Web Clip de iPhone o enlace directo)
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetId = urlParams.get('id') || urlParams.get('cred');
+
+      if (targetId) {
+        // 1. Intentar cargar de localStorage si coincide
+        const saved = localStorage.getItem('erap_student_passport');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.id === targetId) {
+              activePassport = parsed;
+              renderPassportView(activePassport);
+              return;
+            }
+          } catch(e) {}
+        }
+
+        // 2. Si no esta en localStorage pero esta en el padron oficial:
+        const matched = OFFICIAL_STUDENTS.find(s => s.id === targetId);
+        if (matched) {
+          activePassport = {
+            id: matched.id,
+            name: matched.name,
+            countryId: urlParams.get('c') || "pending",
+            role: urlParams.get('r') || "Misión Diplomática ERAP",
+            folio: urlParams.get('folio') || `IPN-ESCA-${matched.id.toUpperCase()}-2026`,
+            registeredAt: new Date().toISOString()
+          };
+          localStorage.setItem('erap_student_passport', JSON.stringify(activePassport));
+          renderPassportView(activePassport);
+          return;
+        }
+      }
+
+      // Check if already registered in this phone
+      const saved = localStorage.getItem('erap_student_passport');
+      if (saved) {
+        try {
+          activePassport = JSON.parse(saved);
+          renderPassportView(activePassport);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Funciones auxiliares de validación y seguridad
+    function isAuthenticated() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function isTeacher(profesorId) {
+      return isAuthenticated() && request.auth.uid == profesorId;
+    }
+
+    function isFreshTimestamp(ts) {
+      // Tolera hasta 5 minutos de diferencia para evitar desfases de reloj cliente-servidor
+      return ts is timestamp && 
+             request.time > ts - duration.value(2, 'm') && 
+             request.time < ts + duration.value(5, 'm');
+    }
+
+    // 1. Perfil y configuración del profesor
+    match /profesores/{profesorId} {
+      allow read, write: if isTeacher(profesorId);
+
+      // Subcolección de grupos y listas de alumnos
+      match /grupos/{grupoId} {
+        allow read, write: if isTeacher(profesorId);
+      }
+
+      // Subcolección de pasaportes emitidos a alumnos
+      match /pasaportes/{matricula} {
+        // El alumno puede consultar su propio pasaporte si conoce su matrícula
+        // El profesor tiene control total
+        allow read: if isTeacher(profesorId) || 
+                       (resource != null && resource.data.matricula == matricula);
+        allow write: if isTeacher(profesorId);
+      }
+
+      // Subcolección de sesiones de pase de lista activas
+      match /sesiones/{sesionId} {
+        // Lectura pública del token activo para validación del QR
+        allow read: if true;
+        allow write: if isTeacher(profesorId);
+      }
+
+      // Subcolección de asistencias enviadas por alumnos
+      match /asistencias/{asistenciaId} {
+        // Solo el profesor puede leer el historial, modificar o eliminar registros
+        allow read, update, delete: if isTeacher(profesorId);
+
+        // Los alumnos solo pueden CREAR su ticket de asistencia bajo validaciones estrictas
+        allow create: if 
+          // Validación de campos obligatorios exactos
+          request.resource.data.keys().hasOnly(['matricula', 'nombreAlumno', 'grupo', 'folio', 'timestamp', 'tokenHash', 'userAgent']) &&
+          // Tipado y límites de tamaño (Prevención de DoS y saturación)
+          request.resource.data.matricula is string &&
+          request.resource.data.matricula.size() >= 4 &&
+          request.resource.data.matricula.size() <= 30 &&
+          request.resource.data.nombreAlumno is string &&
+          request.resource.data.nombreAlumno.size() >= 3 &&
+          request.resource.data.nombreAlumno.size() <= 120 &&
+          request.resource.data.grupo is string &&
+          request.resource.data.grupo.size() <= 30 &&
+          request.resource.data.folio is string &&
+          request.resource.data.folio.size() <= 50 &&
+          request.resource.data.tokenHash is string &&
+          request.resource.data.tokenHash.size() <= 128 &&
+          // Validación de tiempo (Anti-Replay Attack)
+          isFreshTimestamp(request.resource.data.timestamp);
+      }
+    }
+
+    // Denegación por defecto para cualquier otra ruta
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
