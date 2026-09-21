@@ -12,20 +12,7 @@
 
 > **Creado, diseñado y desarrollado de forma independiente por Salvador Almánzar**
 
----
 
-## 🌐 El "Holograma de Lanzamiento" (Landing Page Oficial)
-
-El proyecto cuenta con su propia **Landing Page de Presentación** con estética de vanguardia retro-futurista:
-
-* 🏷️ **Insignia Superior Multi-Agente:** `PARA ✳️ Claude Code · 🤖 Codex · 🚀 Antigravity`
-* ⚡ **Logo Retro Neón en 3D:** Tipografía de alto impacto **`PASAPORTE`** con resplandor holográfico y extrusión visual.
-* 📋 **Copiado en 1 Clic de Comandos:** Alterna entre prompt de IA y comando CLI con animación de confeti.
-* 🎬 **Modal Interactivo con la Experiencia Docente:** Recorrido guiado de 4 pasos para profesores.
-
-👉 **Explora la landing page abriendo:** [`public/landing.html`](public/landing.html)
-
----
 
 ## 💡 El Problema vs La Solución
 
