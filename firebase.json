@@ -45,6 +45,10 @@
       ],
       "rewrites": [
         {
+          "source": "/landing",
+          "destination": "/landing.html"
+        },
+        {
           "source": "/registro",
           "destination": "/registro.html"
         },

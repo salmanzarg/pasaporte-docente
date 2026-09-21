@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pasaporte Docente — Asistencia con IA y Códigos QR, desde tu terminal</title>
+  <meta name="description" content="La herramienta que tu agente de IA usa para construir y desplegar tu sistema de asistencia gamificada con códigos QR en Google Cloud — sin tocar código.">
+  
+  <!-- Tipografías Oficiales -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Press+Start+2P&family=Silkscreen:wght@700&display=swap" rel="stylesheet">
+  
+  <!-- CDN Tailwind & Iconos -->
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --glow-orange: #FF6600;
+      --glow-amber: #FFAE19;
+      --glow-gold: #FFD23F;
+      --bg-dark: #070709;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: #F3F4F6;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .font-retro {
+      font-family: 'Silkscreen', 'Press Start 2P', monospace;
+      letter-spacing: 0.08em;
+    }
+
+    /* Brillo de fondo atmosférico (Holograma) */
+    .hologram-glow {
+      position: absolute;
+      top: 15%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 720px;
+      height: 480px;
+      background: radial-gradient(circle, rgba(255, 102, 0, 0.22) 0%, rgba(255, 174, 25, 0.08) 45%, transparent 70%);
+      filter: blur(75px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Texto 3D retro con capas pixeladas inspirado en FORJA */
+    .retro-title {
+      background: linear-gradient(180deg, #FFFFFF 0%, #FFB03A 30%, #FF6600 70%, #CC3300 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 35px rgba(255, 102, 0, 0.75)) drop-shadow(0 0 70px rgba(255, 60, 0, 0.4));
+      text-shadow: 
+        0 2px 0 #992200,
+        0 4px 0 #661100,
+        0 6px 15px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Animación de pulso del holograma */
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 0.95; transform: scale(1); }
+      50% { opacity: 0.82; transform: scale(0.99); }
+    }
+    .hologram-pulse {
+      animation: subtlePulse 4s ease-in-out infinite;
+    }
+
+    /* Estilo del botón de acción naranja brillante */
+    .btn-glow {
+      background: linear-gradient(135deg, #FF7B25 0%, #FF5500 50%, #E63900 100%);
+      box-shadow: 0 4px 25px rgba(255, 102, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-glow:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 35px rgba(255, 102, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+    }
+    .btn-glow:active {
+      transform: translateY(1px);
+    }
+
+    /* Borde luminoso suave */
+    .glass-pill {
+      background: rgba(18, 18, 22, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .glass-card {
+      background: rgba(14, 14, 18, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-orange-500/30 relative">
+
+  <!-- FONDO CON GLOW ATMOSFÉRICO -->
+  <div class="hologram-glow"></div>
+
+  <!-- NAVBAR SUPERIOR -->
+  <header class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 flex items-center justify-between relative z-20">
+    <div class="flex items-center space-x-2.5">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FF5500] to-[#FFAE19] p-0.5 flex items-center justify-center shadow-lg shadow-orange-500/20">
+        <div class="w-full h-full bg-[#070709] rounded-[10px] flex items-center justify-center">
+          <span class="text-sm font-black text-[#FFAE19] font-mono">P</span>
+        </div>
+      </div>
+      <span class="text-sm font-bold tracking-tight text-white">Pasaporte Docente</span>
+      <span class="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-300 font-mono">v1.0 Lite</span>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <a href="https://github.com/salmanzarg/pasaporte-docente" target="_blank" class="glass-pill hover:bg-white/10 text-xs font-semibold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-all text-slate-300 hover:text-white">
+        <i data-lucide="github" class="w-3.5 h-3.5"></i>
+        <span>GitHub</span>
+      </a>
+      <a href="/index.html" class="glass-pill hover:bg-orange-500/20 hover:border-orange-500/40 text-xs font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-all text-amber-300">
+        <span>Abrir App</span>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL: HERO ESTILO FORJA -->
+  <main class="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-16 text-center relative z-10 flex-1 flex flex-col items-center justify-center space-y-7">
+    
+    <!-- PILL BADGE SUPERIOR CON AGENTES DE IA -->
+    <div class="inline-flex items-center space-x-2 glass-pill px-4 py-1.5 rounded-full shadow-2xl">
+      <span class="text-[10px] sm:text-xs font-mono tracking-widest text-slate-400 uppercase">PARA</span>
+      <span class="text-slate-600">•</span>
+      <span class="flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-slate-200">
+        <span class="text-amber-400">✳️</span> Claude Code
+      </span>
+      <span class="text-slate-600">•</span>
+      <span class="flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-slate-200">
+        <span class="text-sky-400">🤖</span> Codex
+      </span>
+      <span class="text-slate-600">•</span>
+      <span class="flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-slate-200">
+        <span class="text-rose-400">🚀</span> Antigravity
+      </span>
+    </div>
+
+    <!-- TÍTULO LOGO ESTILO HOLOGRAMA RETRO (INSPIRADO EN FORJA) -->
+    <div class="space-y-2 select-none hologram-pulse">
+      <div class="font-retro text-4xl sm:text-7xl md:text-8xl tracking-wider retro-title">
+        PASAPORTE
+      </div>
+    </div>
+
+    <!-- HEADLINE CENTRAL -->
+    <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-[1.15] max-w-2xl">
+      Asistencia con IA y QR, <br class="hidden sm:inline">
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#FF9A44] to-[#FF5500]">desde tu terminal.</span>
+    </h1>
+
+    <!-- PÁRRAFO DE PROPÓSITO -->
+    <p class="text-sm sm:text-base md:text-lg text-slate-300/90 max-w-2xl mx-auto leading-relaxed font-normal">
+      <strong>Pasaporte Docente</strong> es la herramienta que tu agente de IA usa para construir, desplegar y administrar el pase de lista y pasaportes digitales para tus alumnos —<strong>sin que tú toques código</strong>. Escribes un comando y tu agente hace el resto.
+    </p>
+
+    <!-- CAJA DE COMANDOS INTERACTIVA (CLICK TO COPY) -->
+    <div class="w-full max-w-xl glass-card rounded-2xl p-3 sm:p-4 border border-slate-800 shadow-2xl text-left space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+        <!-- Selector de Pestaña -->
+        <div class="flex items-center space-x-2 text-xs">
+          <button id="tab-agent" onclick="switchCommandTab('agent')" class="px-2.5 py-1 rounded-lg font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40 flex items-center gap-1.5 transition-all">
+            <span>🤖 Asistente de IA</span>
+          </button>
+          <button id="tab-cli" onclick="switchCommandTab('cli')" class="px-2.5 py-1 rounded-lg font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+            <span>⚡ Terminal CLI</span>
+          </button>
+        </div>
+        <span class="text-[10px] text-slate-500 font-mono">1-click copy</span>
+      </div>
+
+      <!-- Texto del comando a copiar -->
+      <div class="flex items-center justify-between bg-black/60 rounded-xl p-3 border border-slate-800/80 group">
+        <code id="commandCode" class="text-xs sm:text-sm font-mono text-amber-200 overflow-x-auto whitespace-pre-wrap select-all">Instala y despliega Pasaporte Docente desde https://github.com/salmanzarg/pasaporte-docente</code>
+        <button onclick="copyCommandPrompt()" class="ml-2 p-2 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all active:scale-90 shrink-0" title="Copiar al portapapeles">
+          <i data-lucide="copy" id="copyIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
+        <span id="commandHint">👉 Pégalo en Claude Code, Codex o Antigravity</span>
+        <span id="copiedTooltip" class="hidden text-emerald-400 font-bold">¡Copiado con éxito! ✨</span>
+      </div>
+    </div>
+
+    <!-- BOTONES PRINCIPALES DE ACCIÓN -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full sm:w-auto">
+      <a href="/index.html" class="btn-glow w-full sm:w-auto px-7 py-3.5 rounded-full text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl">
+        <span>Empezar gratis</span>
+        <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+      </a>
+
+      <button onclick="openExperienceModal()" class="glass-pill hover:bg-white/10 w-full sm:w-auto px-6 py-3.5 rounded-full text-slate-200 hover:text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all">
+        <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+        <span>Ver la experiencia docente</span>
+      </button>
+    </div>
+
+  </main>
+
+  <!-- MODAL INTERACTIVO: EXPERIENCIA DEL/LA PROFESOR(A) -->
+  <div id="experienceModal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-card border border-orange-500/40 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative text-left">
+      <button onclick="closeExperienceModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white text-lg p-1">✕</button>
+      
+      <div class="space-y-1 text-center sm:text-left">
+        <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[10px] font-black tracking-wider uppercase font-mono">
+          PEDAGOGÍA + TECNOLOGÍA ZERO-CODE
+        </div>
+        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">
+          La Experiencia de la Profesora / Profesor
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-300">
+          Diseñado para devolverte los 15 minutos perdidos en cada clase.
+        </p>
+      </div>
+
+      <!-- Pasos del Recorrido Docente -->
+      <div class="space-y-3.5 text-xs sm:text-sm">
+        
+        <!-- Paso 1 -->
+        <div class="p-3.5 rounded-2xl bg-[#09090D] border border-slate-800 flex items-start gap-3">
+          <div class="w-7 h-7 rounded-xl bg-orange-500/20 text-orange-400 font-bold flex items-center justify-center shrink-0 text-xs">1</div>
+          <div class="space-y-1">
+            <h3 class="font-bold text-white">Despliegue Asistido con 1 Clic</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              El docente copia el link en su asistente de IA o corre el comando CLI. La IA le pregunta su nombre y materia, conecta su cuenta de Google Firebase y lo despliega sin tocar una sola línea de código.
+            </p>
+          </div>
+        </div>
+
+        <!-- Paso 2 -->
+        <div class="p-3.5 rounded-2xl bg-[#09090D] border border-slate-800 flex items-start gap-3">
+          <div class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0 text-xs">2</div>
+          <div class="space-y-1">
+            <h3 class="font-bold text-white">Proyección del QR para Alumnos</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              En el aula, el cañón proyecta el código QR. Los alumnos lo escanean desde su banca y generan al instante su <strong>Pasaporte Diplomático Digital</strong> en su celular, sin descargar nada de la App Store.
+            </p>
+          </div>
+        </div>
+
+        <!-- Paso 3 -->
+        <div class="p-3.5 rounded-2xl bg-[#09090D] border border-slate-800 flex items-start gap-3">
+          <div class="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0 text-xs">3</div>
+          <div class="space-y-1">
+            <h3 class="font-bold text-white">Pase de Lista en 30 Segundos con Voz en Vivo</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              El docente abre el escáner ráfaga. Conforme los alumnos pasan su celular frente a la cámara, el dispositivo anuncia en voz alta: 🗣️ <em>«Mariana Gómez, presente»</em>. Si alguien intenta pasar el teléfono de un amigo que faltó, queda expuesto al instante.
+            </p>
+          </div>
+        </div>
+
+        <!-- Paso 4 -->
+        <div class="p-3.5 rounded-2xl bg-[#09090D] border border-slate-800 flex items-start gap-3">
+          <div class="w-7 h-7 rounded-xl bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center shrink-0 text-xs">4</div>
+          <div class="space-y-1">
+            <h3 class="font-bold text-white">Cero Pérdida de Datos y Exportación en Excel</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              Todo queda guardado en tiempo real en la nube gratuita privada del profesor. Con un botón se generan las actas y estadísticas de asistencia para la dirección escolar.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="pt-2">
+        <button onclick="closeExperienceModal()" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black rounded-xl text-xs sm:text-sm active:scale-95 transition-all shadow-lg">
+          ¡Me encanta! Probar el sistema ahora
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER INFERIOR ESTILO FORJA -->
+  <footer class="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 text-center text-xs text-slate-500 font-mono relative z-10 border-t border-slate-900">
+    <p class="flex items-center justify-center gap-1.5 flex-wrap">
+      <span>Siempre con un docente supervisando.</span>
+      <span class="text-slate-700">•</span>
+      <span>Creado de forma independiente por <a href="https://www.linkedin.com/in/salvador-almanzar/" target="_blank" class="text-orange-400/90 hover:text-orange-300 underline font-semibold">Salvador Almánzar</a>.</span>
+    </p>
+  </footer>
+
+  <!-- LÓGICA INTERACTIVA JAVASCRIPT -->
+  <script>
+    if (window.lucide) lucide.createIcons();
+
+    let currentTab = 'agent';
+    const PROMPT_AGENT = "Instala y despliega Pasaporte Docente desde https://github.com/salmanzarg/pasaporte-docente";
+    const COMMAND_CLI = "curl -fsSL https://raw.githubusercontent.com/salmanzarg/pasaporte-docente/main/install.sh | bash";
+
+    function switchCommandTab(tab) {
+      currentTab = tab;
+      const codeEl = document.getElementById('commandCode');
+      const hintEl = document.getElementById('commandHint');
+      const btnAgent = document.getElementById('tab-agent');
+      const btnCli = document.getElementById('tab-cli');
+
+      if (tab === 'agent') {
+        codeEl.textContent = PROMPT_AGENT;
+        hintEl.textContent = "👉 Pégalo en Claude Code, Codex o Antigravity";
+        btnAgent.className = "px-2.5 py-1 rounded-lg font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40 flex items-center gap-1.5 transition-all";
+        btnCli.className = "px-2.5 py-1 rounded-lg font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5";
+      } else {
+        codeEl.textContent = COMMAND_CLI;
+        hintEl.textContent = "👉 Pégalo en tu Terminal (Mac, Linux o WSL)";
+        btnCli.className = "px-2.5 py-1 rounded-lg font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40 flex items-center gap-1.5 transition-all";
+        btnAgent.className = "px-2.5 py-1 rounded-lg font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5";
+      }
+    }
+
+    function copyCommandPrompt() {
+      const codeText = document.getElementById('commandCode').textContent;
+      navigator.clipboard.writeText(codeText).then(() => {
+        const tooltip = document.getElementById('copiedTooltip');
+        const icon = document.getElementById('copyIcon');
+        tooltip.classList.remove('hidden');
+        if (icon) icon.setAttribute('data-lucide', 'check');
+        if (window.lucide) lucide.createIcons();
+
+        if (window.confetti) {
+          confetti({
+            particleCount: 35,
+            spread: 50,
+            origin: { y: 0.7 },
+            colors: ['#FF6600', '#FFAE19', '#FFD23F']
+          });
+        }
+
+        setTimeout(() => {
+          tooltip.classList.add('hidden');
+          if (icon) icon.setAttribute('data-lucide', 'copy');
+          if (window.lucide) lucide.createIcons();
+        }, 2200);
+      });
+    }
+
+    function openExperienceModal() {
+      const modal = document.getElementById('experienceModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeExperienceModal() {
+      const modal = document.getElementById('experienceModal');
+      if (modal) modal.classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

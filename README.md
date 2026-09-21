@@ -18,21 +18,25 @@
 
 ---
 
-## ⚡ Instalación Automática Asistida por IA (Zero-Code)
+## ⚡ Instalación en 1 Clic (Agentic & CLI)
 
-Este repositorio está diseñado bajo el estándar **Agentic-First**. No necesitas ser programador ni saber de servidores.
+Este repositorio está diseñado bajo el estándar **Agentic-First** para docentes y desarrolladores:
 
-Si utilizas **Claude Code**, **Antigravity**, **Cursor** o **Codex**, simplemente copia y pega este comando:
+### Opción A: Con Asistentes de IA (Zero-Code)
+Si utilizas **Claude Code**, **Antigravity**, **Cursor** o **Codex**, simplemente copia y pega este comando en el chat de tu agente:
 
 ```text
 Instala y despliega Pasaporte Docente desde https://github.com/salmanzarg/pasaporte-docente
 ```
 
-El agente de IA leerá automáticamente el protocolo [AGENTS.md](AGENTS.md) y:
-1. Te saludará y te pedirá tu nombre, materia e institución.
-2. Abrirá una pestaña para conectar tu cuenta habitual de Google (Firebase Gratuito).
-3. Creará tu base de datos protegida con reglas de ciberseguridad.
-4. Desplegará la aplicación y te entregará tus enlaces listos para proyectar en clase.
+El agente de IA leerá automáticamente el protocolo [AGENTS.md](AGENTS.md), te pedirá tus datos en español sencillo y lo desplegará en tu propia nube gratuita de Google.
+
+### Opción B: CLI Oficial desde tu Terminal (Mac, Linux o WSL)
+Ejecuta este comando universal para iniciar el instalador interactivo:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/salmanzarg/pasaporte-docente/main/install.sh | bash
+```
 
 ---
 
