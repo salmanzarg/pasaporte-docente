@@ -77,11 +77,15 @@ window.DOCENTE_CONFIG = {
   materia: "${PROF_SUBJECT}",
   siglas: "${PROF_SIGLAS}",
   ciclo: "${YEAR:-$(date +%Y)}",
-  colorPrimario: "#6B1D2F",
+  colorPrimario: "#1E293B",
   colorSecundario: "#D4AF37",
-  creditos: "Desarrollado y conceptualizado por Salvador Almánzar"
+  creditos: "Desarrollado y conceptualizado por Salvador Almánzar",
+  firebase: null
 };
 EOF
+
+# Sincronizar también con la raíz si existe
+cp "$REPO_DIR/public/config.js" "$REPO_DIR/config.js" 2>/dev/null || true
 
 echo -e "${C_GREEN}✅ Configuración guardada exitosamente.${C_RESET}\n"
 
@@ -108,10 +112,12 @@ case "$USER_CHOICE" in
     fi
     ;;
   2)
-    echo -e "\n${C_CYAN}🔐 Iniciando conexión con Google Firebase (Plan Gratuito)...${C_RESET}"
+    echo -e "\n${C_CYAN}🔐 Iniciando conexión con Google Firebase (Plan Gratuito Spark)...${C_RESET}"
     if command -v npx &> /dev/null; then
       npx -y firebase-tools@latest login
-      echo -e "\n${C_CYAN}🚀 Desplegando en la nube de Google...${C_RESET}"
+      echo -e "\n${C_CYAN}📋 Seleccione o cree su proyecto de Firebase:${C_RESET}"
+      npx -y firebase-tools@latest use --add || true
+      echo -e "\n${C_CYAN}🚀 Desplegando en su propia nube de Google...${C_RESET}"
       npx -y firebase-tools@latest deploy --only hosting,firestore
       echo -e "\n${C_GREEN}${C_BOLD}🎉 ¡FELICIDADES! Su app está en internet y lista para usarse en clase.${C_RESET}"
     else

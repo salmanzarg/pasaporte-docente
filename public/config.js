@@ -1,5 +1,5 @@
 // ==============================================================================
-// 🎓 PASAPORTE DOCENTE — Plantilla Oficial de Configuración
+// 🎓 PASAPORTE DOCENTE — Configuración de Entorno Local y Nube
 // Creado de manera independiente por Salvador Almánzar (Licencia MIT)
 // ==============================================================================
 

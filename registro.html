@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>ERAP IPN | Pasaporte Diplomático Digital del Alumno</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,12 +11,16 @@
   <link rel="apple-touch-icon" href="https://img.icons8.com/color/192/passport.png">
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <script src="qrcode-generator.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Firebase SDK (Cloud Firestore) -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <!-- Configuración del Docente e Integración -->
+  <script src="config.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400..800;1,400..800&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
@@ -39,10 +43,54 @@
       font-family: 'JetBrains Mono', monospace !important;
     }
     .security-guilloche {
+      background-color: #07101E;
       background-image: 
-        radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
-        repeating-linear-gradient(45deg, rgba(30, 56, 91, 0.25) 0, rgba(30, 56, 91, 0.25) 1px, transparent 0, transparent 12px),
-        repeating-linear-gradient(-45deg, rgba(107, 29, 47, 0.2) 0, rgba(107, 29, 47, 0.2) 1px, transparent 0, transparent 12px);
+        radial-gradient(ellipse 95% 75% at 50% 18%, rgba(107, 29, 47, 0.45) 0%, transparent 65%),
+        radial-gradient(circle at 85% 80%, rgba(212, 175, 55, 0.16) 0%, transparent 50%),
+        radial-gradient(circle at 15% 85%, rgba(14, 165, 233, 0.14) 0%, transparent 45%),
+        repeating-linear-gradient(0deg, rgba(212, 175, 55, 0.04) 0, rgba(212, 175, 55, 0.04) 1px, transparent 1px, transparent 10px),
+        repeating-linear-gradient(90deg, rgba(212, 175, 55, 0.04) 0, rgba(212, 175, 55, 0.04) 1px, transparent 1px, transparent 10px),
+        repeating-linear-gradient(45deg, rgba(30, 56, 91, 0.32) 0, rgba(30, 56, 91, 0.32) 1px, transparent 1px, transparent 15px),
+        repeating-linear-gradient(-45deg, rgba(107, 29, 47, 0.22) 0, rgba(107, 29, 47, 0.22) 1px, transparent 1px, transparent 15px);
+    }
+    .diplomatic-frame {
+      border: 2px solid #D4AF37;
+      box-shadow: 
+        0 0 0 1px rgba(7, 16, 30, 0.9),
+        0 0 0 3px rgba(212, 175, 55, 0.4),
+        0 20px 50px -10px rgba(0, 0, 0, 0.95);
+    }
+    .security-strip {
+      background: linear-gradient(180deg, 
+        rgba(212, 175, 55, 0.9) 0%, 
+        rgba(255, 245, 200, 0.95) 20%, 
+        rgba(180, 130, 30, 0.85) 45%, 
+        rgba(255, 245, 200, 0.95) 75%, 
+        rgba(212, 175, 55, 0.9) 100%);
+      box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+    }
+    .consular-stamp {
+      border: 1.5px dashed rgba(212, 175, 55, 0.6);
+      background: radial-gradient(circle, rgba(107, 29, 47, 0.3) 0%, rgba(7, 15, 30, 0.35) 100%);
+      transform: rotate(-3.5deg);
+    }
+    .mrz-block {
+      letter-spacing: 0.16em;
+      font-feature-settings: "tnum" 1;
+      font-size: 8.5px;
+      line-height: 1.35;
+      color: #F3E5AB;
+      background: rgba(5, 11, 20, 0.88);
+      border-top: 1px solid rgba(212, 175, 55, 0.35);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .animate-pulse {
+        animation: none !important;
+      }
+      * {
+        scroll-behavior: auto !important;
+        transition-duration: 0.05s !important;
+      }
     }
   </style>
 </head>
@@ -82,9 +130,9 @@
       <form id="passportForm" onsubmit="handlePassportSubmit(event)" class="space-y-3.5 text-xs">
         <!-- Selector de Alumno -->
         <div>
-          <label class="block text-slate-300 font-bold mb-1">Nombre Completo del Alumno:</label>
-          <select id="studentSelect" onchange="onStudentSelectChange()" required class="w-full bg-[#142642] border border-[#284B7C] text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 font-medium">
-            <option value="">-- Selecciona tu nombre de la lista oficial (32 Alumnos) --</option>
+          <label for="studentSelect" class="block text-slate-300 font-bold mb-1">Nombre Completo del Alumno:</label>
+          <select id="studentSelect" onchange="onStudentSelectChange()" required class="w-full bg-[#142642] border border-[#284B7C] text-white text-base sm:text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 font-medium">
+            <option value="">-- Selecciona tu nombre de la lista oficial (38 Alumnos) --</option>
           </select>
         </div>
 
@@ -94,21 +142,21 @@
             <span>ℹ️</span>
             <span>¿No encuentras tu nombre en la lista oficial?</span>
           </div>
-          <button type="button" onclick="activateManualStudentEntry()" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-lg border border-amber-500/40 active:scale-95 transition-all shrink-0">
+          <button type="button" onclick="activateManualStudentEntry()" aria-label="Registrarme manualmente si no estoy en la lista" class="px-3 py-2 min-h-[44px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded-lg border border-amber-500/40 active:scale-95 transition-all shrink-0 flex items-center justify-center">
             ✏️ Registrarme Aquí
           </button>
         </div>
 
         <!-- Nombre manual si selecciona 'otro' -->
         <div id="customNameField" class="hidden">
-          <label class="block text-slate-300 font-bold mb-1">Escribe tu Nombre Completo (Apellidos y Nombres):</label>
-          <input type="text" id="customStudentName" placeholder="Ej. Martínez Sánchez Laura Elena" class="w-full bg-[#12233E] border border-[#284B7C] text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400">
+          <label for="customStudentName" class="block text-slate-300 font-bold mb-1">Escribe tu Nombre Completo (Apellidos y Nombres):</label>
+          <input type="text" id="customStudentName" placeholder="Ej. Martínez Sánchez Laura Elena" class="w-full bg-[#12233E] border border-[#284B7C] text-white text-base sm:text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400">
         </div>
 
         <!-- Selector de País -->
         <div>
-          <label class="block text-slate-300 font-bold mb-1">Gabinete / País Representado:</label>
-          <select id="countrySelect" required class="w-full bg-[#142642] border border-[#284B7C] text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 font-medium">
+          <label for="countrySelect" class="block text-slate-300 font-bold mb-1">Gabinete / País Representado:</label>
+          <select id="countrySelect" required class="w-full bg-[#142642] border border-[#284B7C] text-white text-base sm:text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 font-medium">
             <option value="">-- Selecciona tu País de Asia-Pacífico --</option>
             <option value="sg">🇸🇬 Singapur • Hub Financiero y Portuario</option>
             <option value="in">🇮🇳 India • Corredor Tecnológico y Farmacéutico</option>
@@ -124,8 +172,8 @@
 
         <!-- Selector de Rol Ministerial -->
         <div>
-          <label class="block text-slate-300 font-bold mb-1">Rol de Gobierno / Cartera Ministerial:</label>
-          <select id="roleSelect" required class="w-full bg-[#142642] border border-[#284B7C] text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 font-medium">
+          <label for="roleSelect" class="block text-slate-300 font-bold mb-1">Rol de Gobierno / Cartera Ministerial:</label>
+          <select id="roleSelect" required class="w-full bg-[#142642] border border-[#284B7C] text-white text-base sm:text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 font-medium">
             <option value="Primer Ministro">🏛️ Primer Ministro / Jefe de Gabinete</option>
             <option value="Ministro de Comercio Exterior e Inversiones">📈 Ministro de Comercio Exterior e Inversiones</option>
             <option value="Canciller de Asuntos Exteriores y Geopolítica">🌐 Canciller de Asuntos Exteriores y Geopolítica</option>
@@ -156,65 +204,94 @@
       </div>
 
       <!-- PASSPORT CARD (LISTA PARA DESCARGAR CON HTML2CANVAS) -->
-      <div id="studentPassportCard" class="w-full max-w-[420px] mx-auto rounded-2xl p-5 border-2 border-[#D4AF37] bg-gradient-to-b from-[#0A192F] via-[#10223D] to-[#070F1E] shadow-[0_12px_40px_rgba(0,0,0,0.85)] relative overflow-hidden security-guilloche">
+      <div id="studentPassportCard" class="w-full max-w-[420px] mx-auto rounded-3xl p-5 diplomatic-frame bg-gradient-to-b from-[#09172B] via-[#0E213D] to-[#060D19] shadow-[0_20px_60px_rgba(0,0,0,0.95)] relative overflow-hidden security-guilloche select-none">
         
-        <!-- Perímetro dorado de seguridad -->
-        <div class="absolute inset-1 rounded-xl border border-amber-500/30 pointer-events-none"></div>
+        <!-- Perímetro dorado de seguridad y esquineros consulares -->
+        <div class="absolute inset-1.5 rounded-[22px] border border-amber-400/40 pointer-events-none"></div>
+        <div class="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-amber-300 pointer-events-none"></div>
+        <div class="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-amber-300 pointer-events-none"></div>
+        <div class="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-amber-300 pointer-events-none"></div>
+        <div class="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-amber-300 pointer-events-none"></div>
 
-        <!-- Cabecera Institucional -->
+        <!-- Hilo de seguridad metálico vertical -->
+        <div class="absolute left-2.5 top-6 bottom-6 w-1 security-strip rounded-full opacity-60 pointer-events-none"></div>
+
+        <!-- Cuño Consular en Filigrana de Fondo -->
+        <div class="absolute right-3.5 top-14 consular-stamp w-16 h-16 rounded-full flex flex-col items-center justify-center pointer-events-none opacity-40 shadow-inner z-0">
+          <span class="text-[6.5px] font-black tracking-widest text-amber-300 uppercase">ERAP•IPN</span>
+          <span class="text-[9px] text-amber-400 leading-none">★</span>
+          <span class="text-[6px] font-mono font-bold text-amber-200">2026-1</span>
+        </div>
+
+        <!-- Cabecera Institucional de Estado -->
         <div class="text-center border-b border-amber-500/40 pb-2.5 relative z-10 space-y-0.5">
-          <div class="flex items-center justify-center gap-1.5 text-[9px] font-black uppercase text-amber-300 tracking-wider">
-            <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
-            <span>SEP • IPN | Instituto Politécnico Nacional</span>
+          <div class="flex items-center justify-center gap-1.5 text-[8.5px] font-black uppercase text-amber-300 tracking-[0.18em]">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-600 shadow-[0_0_6px_#E11D48]"></span>
+            <span>ESTADOS UNIDOS MEXICANOS • SEP • IPN</span>
           </div>
-          <div class="text-[10px] font-bold text-slate-200 uppercase tracking-tight">
-            ESCA Unidad Santo Tomás • Plan 2022
+          <div class="text-[10.5px] font-extrabold text-slate-100 uppercase tracking-tight">
+            ESCA Santo Tomás • Licenciatura en Negocios Internacionales
           </div>
-          <div class="inline-flex items-center px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-500/40 text-[9px] font-extrabold text-amber-300 mt-1">
-            ACREDITACIÓN DIPLOMÁTICA OFICIAL • ERAP 2026-1
+          <div class="inline-flex items-center px-3 py-0.5 bg-gradient-to-r from-amber-500/20 via-yellow-500/30 to-amber-500/20 rounded-full border border-amber-400/60 text-[9px] font-black text-amber-200 mt-1 shadow-sm tracking-wider">
+            ACREDITACIÓN DIPLOMÁTICA OFICIAL • CICLO 2026-1
           </div>
         </div>
 
         <!-- Cuerpo Central del Pasaporte -->
-        <div class="py-3.5 space-y-3 relative z-10">
+        <div class="py-3 space-y-3 relative z-10">
           
           <!-- Avatar + Datos Principales -->
-          <div class="flex items-center space-x-3">
-            <div id="cardFlagContainer" class="w-16 h-16 rounded-xl bg-gradient-to-tr from-[#1E385B] to-[#0A192F] border-2 border-amber-400 flex items-center justify-center shadow-lg text-3xl shrink-0">
-              🇸🇬
+          <div class="flex items-center space-x-3.5">
+            <div class="relative shrink-0">
+              <div id="cardFlagContainer" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1E385B] via-[#0E213D] to-[#2B0E17] border-2 border-amber-400 flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.6)] text-3xl">
+                🇸🇬
+              </div>
+              <div class="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded bg-emerald-950/90 border border-emerald-400/60 text-[7.5px] font-mono font-extrabold text-emerald-300 shadow">
+                BIO•ID
+              </div>
             </div>
-            <div class="overflow-hidden">
-              <span class="text-[9px] font-bold text-amber-400 uppercase tracking-widest block" id="cardCountryName">Singapur</span>
-              <h3 class="text-sm font-black text-white leading-snug break-words" id="cardStudentName">Nombre del Alumno</h3>
-              <p class="text-[11px] font-semibold text-slate-300 mt-0.5" id="cardRoleName">Primer Ministro</p>
+
+            <div class="overflow-hidden flex-1 space-y-0.5">
+              <span class="text-[8.5px] font-bold text-amber-400/90 uppercase tracking-widest block" id="cardCountryName">Singapur</span>
+              <h3 class="text-sm font-black text-white leading-snug break-words tracking-tight" id="cardStudentName">Nombre del Alumno</h3>
+              <p class="text-[11px] font-bold text-slate-200" id="cardRoleName">Primer Ministro</p>
             </div>
           </div>
 
           <!-- Bloque de Seguridad: Folio + QR -->
-          <div class="bg-[#070F1E]/90 border border-slate-700/80 rounded-xl p-3 flex items-center justify-between">
+          <div class="bg-[#050C17]/90 border border-amber-500/30 rounded-xl p-2.5 flex items-center justify-between shadow-inner">
             <div class="space-y-1">
-              <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Folio Criptográfico:</span>
+              <div class="flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-[8.5px] font-black uppercase tracking-wider text-slate-400">FOLIO MINISTERIAL:</span>
+              </div>
               <div class="font-mono text-xs font-black text-amber-300 tracking-wider" id="cardFolio">IPN-ESCA-ERAP-2026-01</div>
-              <div class="text-[9px] text-slate-400 flex items-center gap-1 pt-1">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+              <div class="text-[8.5px] text-slate-300 font-semibold flex items-center gap-1 pt-0.5">
+                <span class="text-emerald-400">✓</span>
                 <span>Estado: <strong class="text-emerald-300 font-bold">Oficial Activo</strong></span>
               </div>
             </div>
 
             <!-- Contenedor del QR de Autenticación -->
-            <div class="bg-white p-1.5 rounded-lg shadow-md shrink-0 border border-slate-200">
+            <div class="bg-white p-1 rounded-lg shadow-lg shrink-0 border border-amber-300/80">
               <div id="passportQrCode"></div>
             </div>
+          </div>
+
+          <!-- Zona de Lectura Mecánica (MRZ - Machine Readable Zone) -->
+          <div class="mrz-block rounded-lg px-2.5 py-1.5 font-mono text-[8px] text-amber-200/90 overflow-hidden leading-tight select-all">
+            <div id="mrzLine1" class="whitespace-nowrap truncate tracking-[0.14em]">P&lt;MEXALGUERA&lt;ACOSTA&lt;&lt;RICARDO&lt;ALEJAND&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
+            <div id="mrzLine2" class="whitespace-nowrap truncate tracking-[0.14em]">IPNESCASTU0220268MEX2601019M2607151&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;02</div>
           </div>
         </div>
 
         <!-- Pie de la Credencial -->
-        <div class="border-t border-amber-500/40 pt-2 text-center relative z-10 space-y-0.5">
-          <div class="text-[8px] font-semibold text-slate-400 uppercase italic">
+        <div class="border-t border-amber-500/30 pt-1.5 text-center relative z-10 space-y-0.5">
+          <div class="text-[8px] font-semibold text-slate-400 uppercase tracking-wider italic">
             «La Técnica al Servicio de la Patria»
           </div>
-          <div class="text-[9px] font-bold text-amber-300">
-            Prof. Salvador Almánzar • Cátedra ERAP LNI
+          <div class="text-[8.5px] font-bold text-amber-300">
+            Prof. Salvador Almánzar • Cátedra Geopolítica ERAP LNI
           </div>
         </div>
       </div>
@@ -245,16 +322,16 @@
   </main>
 
   <!-- MODAL: GUARDAR / DESCARGAR IMAGEN DEL PASAPORTE (COMPATIBLE IPHONE / IPAD / ANDROID) -->
-  <div id="imageSaveModal" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+  <div id="imageSaveModal" role="dialog" aria-modal="true" aria-labelledby="imageSaveTitle" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-[#0E1E36] border-2 border-amber-500/60 rounded-3xl max-w-md w-full p-4 sm:p-6 space-y-4 shadow-[0_20px_60px_rgba(0,0,0,0.95)] text-center relative">
-      <button onclick="closeImageSaveModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white text-lg w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">✕</button>
+      <button onclick="closeImageSaveModal()" aria-label="Cerrar modal de guardado" class="absolute top-3 right-3 text-slate-400 hover:text-white text-lg w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">✕</button>
       
       <div class="space-y-1">
         <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase tracking-wider">
           <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
           <span>Pasaporte Generado Exitosamente</span>
         </div>
-        <h3 class="text-base sm:text-lg font-black text-white">Guarda tu Pasaporte Oficial</h3>
+        <h3 id="imageSaveTitle" class="text-base sm:text-lg font-black text-white">Guarda tu Pasaporte Oficial</h3>
         <p class="text-xs text-slate-300">
           Tu documento oficial en alta resolución está listo:
         </p>
@@ -302,16 +379,16 @@
   </div>
 
   <!-- MODAL: AGREGAR A APPLE WALLET / GOOGLE WALLET -->
-  <div id="walletModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+  <div id="walletModal" role="dialog" aria-modal="true" aria-labelledby="walletModalTitle" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-[#0E1E36] border-2 border-amber-500/50 rounded-3xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-[0_20px_60px_rgba(0,0,0,0.9)] text-xs relative">
-      <button onclick="closeWalletModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">✕</button>
+      <button onclick="closeWalletModal()" aria-label="Cerrar modal de billetera móvil" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">✕</button>
 
       <!-- Modal Header -->
       <div class="border-b border-slate-700/80 pb-3 space-y-1">
         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
           VINCULACIÓN DIGITAL OFICIAL
         </span>
-        <h3 class="text-base font-black text-white flex items-center gap-1.5">
+        <h3 id="walletModalTitle" class="text-base font-black text-white flex items-center gap-1.5">
           <span>📲 Tu Pasaporte en tu Billetera Móvil</span>
         </h3>
         <p class="text-slate-400 text-[11px]">
@@ -495,7 +572,7 @@
   </div>
 
   <!-- MODAL QR PANTALLA COMPLETA -->
-  <div id="fullscreenQrModal" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md hidden flex flex-col items-center justify-center p-6 text-center space-y-4">
+  <div id="fullscreenQrModal" role="dialog" aria-modal="true" aria-label="Código QR en Pantalla Completa" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md hidden flex flex-col items-center justify-center p-6 text-center space-y-4">
     <div class="bg-white p-4 rounded-2xl shadow-2xl max-w-xs w-full flex flex-col items-center">
       <div id="fsBigQrCode"></div>
       <span class="text-xs font-black text-slate-900 mt-2 block" id="fsStudentName">Alumno</span>
@@ -504,7 +581,7 @@
     <div class="text-slate-300 text-xs max-w-xs">
       Muestra este código al escáner del profesor para registrar tu asistencia del día.
     </div>
-    <button onclick="closeFullscreenQr()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl active:scale-95">
+    <button onclick="closeFullscreenQr()" aria-label="Cerrar vista de pantalla completa" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl active:scale-95">
       ✕ Cerrar
     </button>
   </div>
@@ -516,41 +593,8 @@
   </footer>
 
   <script>
-    // PADRÓN OFICIAL DE ALUMNOS (DEPURADO)
-    const OFFICIAL_STUDENTS = [
-      { id: "stu-02", name: "Alguera Acosta Ricardo Alejandro" },
-      { id: "stu-03", name: "Álvarez Nieves Pedro Saúl" },
-      { id: "stu-04", name: "Bartolo Martínez Édgar Arturo" },
-      { id: "stu-05", name: "Cortés Hanna Daniela" },
-      { id: "stu-06", name: "Díaz Ceballos Fior Ximena" },
-      { id: "stu-07", name: "Domínguez Rodríguez Valeria" },
-      { id: "stu-08", name: "Escobar García Samantha" },
-      { id: "stu-09", name: "García González Melanie" },
-      { id: "stu-10", name: "González Ciriaco Sergio" },
-      { id: "stu-11", name: "Hernández Jiménez Itzel Sarahí" },
-      { id: "stu-12", name: "Hernández Martínez Miriam Isabella" },
-      { id: "stu-13", name: "Herrera Gómez Óscar" },
-      { id: "stu-14", name: "Jasso Montes de Oca Nadir" },
-      { id: "stu-15", name: "Jiménez Acevez María Fernanda" },
-      { id: "stu-16", name: "Juárez Cervantes Diana Paola" },
-      { id: "stu-17", name: "Lugo Godínez Víctor" },
-      { id: "stu-18", name: "Martínez Cancino Gael Yamil" },
-      { id: "stu-19", name: "Martínez Domínguez Carlos" },
-      { id: "stu-20", name: "Medina Acosta Luz Fernanda" },
-      { id: "stu-21", name: "Mendoza Felipe Fernanda" },
-      { id: "stu-22", name: "Merlos Esperioeta Jaquieline" },
-      { id: "stu-23", name: "Miguel Marín Alejandro" },
-      { id: "stu-24", name: "Mosqueda López Héctor" },
-      { id: "stu-25", name: "Olvera Soto Jesús Alejandro" },
-      { id: "stu-26", name: "Oribe Arce Joaquín Emmanuel" },
-      { id: "stu-27", name: "Peláez Llamas Karen Michelle" },
-      { id: "stu-28", name: "Peña Contreras Dennisse" },
-      { id: "stu-29", name: "Pérez Hernández Ariana" },
-      { id: "stu-30", name: "Pérez Tepozán Fátima" },
-      { id: "stu-31", name: "Rebollar Santiago Leticia" },
-      { id: "stu-32", name: "Román Romero Lucía Camila" },
-      { id: "stu-33", name: "Villanueva Martínez Alejandra Guadalupe" }
-    ];
+        // Padrón Oficial de Alumnos (Plantilla limpia para nuevo ciclo/docente)
+    const OFFICIAL_STUDENTS = [];
 
     const COUNTRIES_INFO = {
       sg: { name: "Singapur", flag: "🇸🇬" },
@@ -563,12 +607,32 @@
       cn: { name: "China", flag: "🇨🇳" },
       pendiente: { name: "Misión Diplomática ERAP", flag: "🌐" }
     };
+    const FIREBASE_CONFIG = (window.DOCENTE_CONFIG && window.DOCENTE_CONFIG.firebase)
+      ? window.DOCENTE_CONFIG.firebase
+      : (window.FIREBASE_CONFIG || null);
+
+    let db = null;
+    try {
+      if (FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.projectId !== "TU_FIREBASE_PROJECT_ID") {
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+          firebase.initializeApp(FIREBASE_CONFIG);
+          db = firebase.firestore();
+        }
+      }
+    } catch (e) {
+      console.warn("Firebase no disponible en registro:", e);
+    }
 
     let activePassport = null;
 
     function populateStudentSelect() {
       const sel = document.getElementById('studentSelect');
-      sel.innerHTML = '<option value="">-- Selecciona tu nombre de la lista oficial (32 Alumnos) --</option>';
+      if (!OFFICIAL_STUDENTS || OFFICIAL_STUDENTS.length === 0) {
+        sel.innerHTML = '<option value="otro">✏️ Registro Directo (Ingresa tu nombre)</option>';
+        activateManualStudentEntry();
+        return;
+      }
+      sel.innerHTML = '<option value="">-- Selecciona tu nombre de la lista --</option>';
       OFFICIAL_STUDENTS.forEach((s, idx) => {
         const opt = document.createElement('option');
         opt.value = s.id;
@@ -645,6 +709,20 @@
       localStorage.setItem('erap_student_passport', JSON.stringify(passportData));
       activePassport = passportData;
 
+      // Respaldar pasaporte en Google Cloud Firestore
+      if (db) {
+        db.collection('pasaportes').doc(stuId).set({
+          id: stuId,
+          name: stuName,
+          countryId: countryId,
+          role: role,
+          folio: folio,
+          type: "ERAP_PASSPORT",
+          v: 1,
+          ts: Date.now()
+        }, { merge: true }).catch(err => console.warn("Error guardando pasaporte en nube:", err));
+      }
+
       // Disparar confeti IPN
       if (typeof confetti === 'function') {
         confetti({
@@ -658,6 +736,20 @@
       renderPassportView(passportData);
     }
 
+    function generateMrzLines(studentName, folio) {
+      const clean = (studentName || "ESTUDIANTE").toUpperCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Z ]/g, "").trim();
+      const parts = clean.split(/\s+/);
+      const lastName = parts.length > 2 ? parts.slice(0, 2).join("<") : (parts[0] || "ESTUDIANTE");
+      const firstNames = parts.length > 2 ? parts.slice(2).join("<") : (parts.slice(1).join("<") || "ALUMNO");
+      
+      const line1 = `P<MEX${lastName}<<${firstNames}`.padEnd(36, "<").slice(0, 36);
+      const cleanFolio = (folio || "IPN2026").replace(/[^A-Z0-9]/g, "");
+      const line2 = `${cleanFolio}8MEX2601019M2607151<<<<<<<<<<02`.padEnd(36, "<").slice(0, 36);
+      return { line1, line2 };
+    }
+
     function renderPassportView(data) {
       document.getElementById('formSection').classList.add('hidden');
       document.getElementById('passportDisplaySection').classList.remove('hidden');
@@ -669,6 +761,13 @@
       document.getElementById('cardStudentName').textContent = data.name;
       document.getElementById('cardRoleName').textContent = data.role;
       document.getElementById('cardFolio').textContent = data.folio;
+
+      // Actualizar Zona de Lectura Mecánica (MRZ Diplomático Oficial)
+      const mrz = generateMrzLines(data.name, data.folio);
+      const mrz1El = document.getElementById('mrzLine1');
+      const mrz2El = document.getElementById('mrzLine2');
+      if (mrz1El) mrz1El.textContent = mrz.line1;
+      if (mrz2El) mrz2El.textContent = mrz.line2;
 
       // Generar QR de 84x84 y 220x220 con motor universal (inmune a nombres largos y acentos)
       const qrContainer = document.getElementById('passportQrCode');
@@ -1139,6 +1238,15 @@
           console.error(e);
         }
       }
+
+      // Cerrar modales con tecla Escape (A11y)
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeImageSaveModal();
+          closeWalletModal();
+          closeFullscreenQr();
+        }
+      });
     });
   </script>
 </body>

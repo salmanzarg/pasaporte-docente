@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERAP IPN | Rescate y Migración de Base de Datos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400..800&family=Plus+Jakarta+Sans:wght@300..800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 50% 20%, #10223D 0%, #070F1E 80%);
+      color: #F1F5F9;
+      min-height: 100vh;
+    }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
+  <div class="max-w-xl w-full bg-[#0A192F]/90 border border-slate-700/80 rounded-2xl shadow-2xl p-6 md:p-8 backdrop-blur-xl relative">
+    
+    <!-- Encabezado Institucional -->
+    <div class="flex items-center space-x-3 mb-6 border-b border-slate-800 pb-4">
+      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-slate-950 font-black shadow-lg">
+        <i data-lucide="database-backup" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h1 class="text-lg md:text-xl font-black text-amber-300 tracking-tight">Centro de Rescate y Migración ERAP</h1>
+        <p class="text-xs text-slate-400">ESCA Unidad Santo Tomás • Instituto Politécnico Nacional</p>
+      </div>
+    </div>
+
+    <!-- Estado de Detección -->
+    <div id="detectionCard" class="mb-6 bg-slate-900/80 border border-slate-700/60 rounded-xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Origen Actual</span>
+        <span id="currentDomainBadge" class="font-mono text-xs px-2.5 py-1 rounded bg-slate-800 text-sky-300 border border-sky-500/30"></span>
+      </div>
+      <div id="statsSummary" class="text-sm space-y-2 text-slate-300">
+        <p class="text-slate-400 italic">Inspeccionando almacenamiento local...</p>
+      </div>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="space-y-3">
+      <button id="btnMigrate" onclick="migrateToTargetDomain()" class="w-full py-3.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black rounded-xl text-sm shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
+        <i data-lucide="send" class="w-4 h-4"></i>
+        <span id="btnMigrateLabel">Transferir Datos al Nuevo Dominio</span>
+      </button>
+
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button onclick="downloadBackup()" class="py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs font-bold text-slate-200 flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i data-lucide="download" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Descargar JSON</span>
+        </button>
+        <button onclick="copyBackupToClipboard()" class="py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs font-bold text-slate-200 flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i data-lucide="copy" class="w-3.5 h-3.5 text-sky-400"></i>
+          <span>Copiar Respaldo</span>
+        </button>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+        <a href="./index.html" class="text-slate-400 hover:text-amber-400 transition-colors flex items-center gap-1">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>Volver al Panel</span>
+        </a>
+        <span class="text-[11px] text-slate-400">Cátedra Prof. Salvador Almánzar</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const TARGET_URL = window.location.origin;
+    let foundData = null;
+
+    function utf8ToBase64(str) {
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+    }
+
+    function inspectStorage() {
+      document.getElementById('currentDomainBadge').textContent = window.location.origin;
+      const raw = localStorage.getItem('erap_dashboard_data_v3_5') || localStorage.getItem('erap_dashboard_data');
+      const statsEl = document.getElementById('statsSummary');
+      const btnMigrate = document.getElementById('btnMigrate');
+
+      if (raw) {
+        try {
+          foundData = JSON.parse(raw);
+          const studentsCount = (foundData.students || []).length;
+          const assignedCount = (foundData.students || []).filter(s => s.countryId && s.countryId !== 'pendiente').length;
+          const cutsCount = Object.keys(foundData.dailyCuts || {}).length;
+          const cutsDates = Object.keys(foundData.dailyCuts || {}).sort().join(', ');
+
+          statsEl.innerHTML = `
+            <div class="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-lg text-emerald-200 text-xs space-y-1.5">
+              <div class="font-bold flex items-center gap-1.5 text-emerald-300">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span>¡Base de datos local detectada con éxito!</span>
+              </div>
+              <p>• <strong>${studentsCount}</strong> alumnos en padrón (<strong>${assignedCount}</strong> con país asignado).</p>
+              <p>• <strong>${cutsCount}</strong> cortes de asistencia guardados:</p>
+              <p class="font-mono text-[11px] text-emerald-400 break-words">${cutsDates || 'Sin fechas'}</p>
+            </div>
+          `;
+          btnMigrate.disabled = false;
+          btnMigrate.classList.remove('opacity-50', 'pointer-events-none');
+        } catch (e) {
+          statsEl.innerHTML = `<p class="text-rose-400 text-xs">Error leyendo el formato de datos: ${e.message}</p>`;
+        }
+      } else {
+        statsEl.innerHTML = `
+          <div class="p-3 bg-amber-950/40 border border-amber-500/40 rounded-lg text-amber-200 text-xs space-y-1">
+            <div class="font-bold flex items-center gap-1.5 text-amber-300">
+              <i data-lucide="info" class="w-4 h-4"></i>
+              <span>No se detectaron datos guardados en este navegador para esta URL.</span>
+            </div>
+            <p>Si pasó lista en su celular o en la otra dirección, abra este mismo enlace en ese dispositivo para rescatar la información.</p>
+          </div>
+        `;
+        btnMigrate.disabled = true;
+        btnMigrate.classList.add('opacity-50', 'pointer-events-none');
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function migrateToTargetDomain() {
+      if (!foundData) {
+        alert("No hay datos disponibles para migrar.");
+        return;
+      }
+      try {
+        const jsonStr = JSON.stringify(foundData);
+        const encoded = utf8ToBase64(jsonStr);
+        const finalUrl = `${TARGET_URL}/#migrated_data=${encoded}`;
+        
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+        alert("🚀 ¡Datos preparados! Redirigiendo a la nueva URL para instalarlos automáticamente...");
+        window.location.href = finalUrl;
+      } catch (e) {
+        alert("Error al codificar la base de datos: " + e.message);
+      }
+    }
+
+    function downloadBackup() {
+      if (!foundData) {
+        alert("No hay datos para respaldar.");
+        return;
+      }
+      const blob = new Blob([JSON.stringify(foundData, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `Respaldo_ERAP_Rescatado_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+    }
+
+    function copyBackupToClipboard() {
+      if (!foundData) {
+        alert("No hay datos para copiar.");
+        return;
+      }
+      navigator.clipboard.writeText(JSON.stringify(foundData)).then(() => {
+        alert("📋 Respaldo copiado al portapapeles. Puede pegarlo en su computadora.");
+      }).catch(err => {
+        alert("No se pudo copiar automáticamente: " + err);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      inspectStorage();
+    });
+  </script>
+</body>
+</html>

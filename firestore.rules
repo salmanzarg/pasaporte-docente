@@ -1,76 +1,197 @@
 rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model & Architecture
+// ===============================================================
+//
+// Sistema: Pasaporte Docente (Control Escolar y Asistencia Inteligente)
+// Arquitectura autónoma para cualquier docente e institución educativa.
+//
+// Nota sobre Autenticación:
+// Actualmente la aplicación opera de forma descentralizada sin Firebase
+// Authentication (acceso docente por PIN en interfaz y consulta estudiantil
+// por matrícula escolar). Por tal motivo, las operaciones se autorizan
+// protegiendo la integridad mediante validación estricta de esquemas,
+// control de tipos CEL, límites de longitud y mitigación de ataques DoS.
+//
+// Colecciones asumidas:
+// 1. erap_sistema/{docId}
+//    - Documento principal: 'datos_principales'
+//    - Contenido: padrón estudiantil, cortes acumulados, eventos y gabinete.
+//    - Campos opcionales / validados:
+//        * students: list (máx. 200 elementos)
+//        * grades: list (máx. 300 elementos)
+//        * dailyCuts: map (máx. 500 entradas de fecha)
+//        * cabinetPoints: map (máx. 50 entradas de gabinete)
+//        * calendarEvents: list (máx. 200 eventos)
+//        * calendarVersion: string (máx. 100 caracteres)
+//        * attendanceCutsVersion: string (máx. 100 caracteres)
+//        * debate: map (máx. 20 campos de puntuación)
+//
+// 2. asistencias/{fecha}
+//    - Documentos individuales de cortes diarios (ej. '2026-09-03')
+//    - ID: fecha en formato ISO/texto (longitud entre 4 y 32 caracteres)
+//    - Campos: registros de lista, totales y metadatos de asistencia
+//
+// 3. pasaportes/{matricula}
+//    - Pasaporte diplomático escolar de cada alumno
+//    - ID: matrícula o identificador único escolar (3 a 50 caracteres)
+//    - Campos:
+//        * id / matricula: string (3 a 50 caracteres)
+//        * name: string (1 a 150 caracteres)
+//        * countryId: string (máx. 20 caracteres)
+//        * role: string (máx. 100 caracteres)
+//        * folio: string (máx. 60 caracteres)
+//        * type: string (máx. 50 caracteres)
+//        * v: number
+//        * ts / timestamp: number o timestamp
+//
+// 4. sesiones/{sesionId}
+//    - Tokens de sesión dinámicos para pase de lista vía QR en el aula
+//    - ID: identificador de sesión (1 a 64 caracteres)
+//    - Campos:
+//        * token / tokenHash: string (máx. 256 caracteres)
+//        * fecha: string (máx. 32 caracteres)
+//        * active: bool
+//        * status: string (máx. 32 caracteres)
+//        * createdAt / expiresAt: number o timestamp
+//
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Funciones auxiliares de validación y seguridad
-    function isAuthenticated() {
-      return request.auth != null && request.auth.uid != null;
+    // ===============================================================
+    // Funciones Auxiliares Generales (Helper Functions)
+    // ===============================================================
+
+    function isValidDocId(id, minLen, maxLen) {
+      return id is string && id.size() >= minLen && id.size() <= maxLen;
     }
 
-    function isTeacher(profesorId) {
-      return isAuthenticated() && request.auth.uid == profesorId;
+    function isValidOptionalString(data, field, minLen, maxLen) {
+      return !(field in data) || 
+             (data[field] is string && data[field].size() >= minLen && data[field].size() <= maxLen);
     }
 
-    function isFreshTimestamp(ts) {
-      // Tolera hasta 5 minutos de diferencia para evitar desfases de reloj cliente-servidor
-      return ts is timestamp && 
-             request.time > ts - duration.value(2, 'm') && 
-             request.time < ts + duration.value(5, 'm');
+    function isValidOptionalNumberOrTimestamp(data, field) {
+      return !(field in data) || 
+             (data[field] is number || data[field] is timestamp);
     }
 
-    // 1. Perfil y configuración del profesor
-    match /profesores/{profesorId} {
-      allow read, write: if isTeacher(profesorId);
+    // ===============================================================
+    // Validadores de Dominio (Domain Validators)
+    // ===============================================================
 
-      // Subcolección de grupos y listas de alumnos
-      match /grupos/{grupoId} {
-        allow read, write: if isTeacher(profesorId);
-      }
-
-      // Subcolección de pasaportes emitidos a alumnos
-      match /pasaportes/{matricula} {
-        // El alumno puede consultar su propio pasaporte si conoce su matrícula
-        // El profesor tiene control total
-        allow read: if isTeacher(profesorId) || 
-                       (resource != null && resource.data.matricula == matricula);
-        allow write: if isTeacher(profesorId);
-      }
-
-      // Subcolección de sesiones de pase de lista activas
-      match /sesiones/{sesionId} {
-        // Lectura pública del token activo para validación del QR
-        allow read: if true;
-        allow write: if isTeacher(profesorId);
-      }
-
-      // Subcolección de asistencias enviadas por alumnos
-      match /asistencias/{asistenciaId} {
-        // Solo el profesor puede leer el historial, modificar o eliminar registros
-        allow read, update, delete: if isTeacher(profesorId);
-
-        // Los alumnos solo pueden CREAR su ticket de asistencia bajo validaciones estrictas
-        allow create: if 
-          // Validación de campos obligatorios exactos
-          request.resource.data.keys().hasOnly(['matricula', 'nombreAlumno', 'grupo', 'folio', 'timestamp', 'tokenHash', 'userAgent']) &&
-          // Tipado y límites de tamaño (Prevención de DoS y saturación)
-          request.resource.data.matricula is string &&
-          request.resource.data.matricula.size() >= 4 &&
-          request.resource.data.matricula.size() <= 30 &&
-          request.resource.data.nombreAlumno is string &&
-          request.resource.data.nombreAlumno.size() >= 3 &&
-          request.resource.data.nombreAlumno.size() <= 120 &&
-          request.resource.data.grupo is string &&
-          request.resource.data.grupo.size() <= 30 &&
-          request.resource.data.folio is string &&
-          request.resource.data.folio.size() <= 50 &&
-          request.resource.data.tokenHash is string &&
-          request.resource.data.tokenHash.size() <= 128 &&
-          // Validación de tiempo (Anti-Replay Attack)
-          isFreshTimestamp(request.resource.data.timestamp);
-      }
+    // Validador 1: erap_sistema
+    function isValidErapSistema(data) {
+      return data is map &&
+             data.size() > 0 &&
+             data.size() <= 50 &&
+             // Validación de listas y mapas con límites de tamaño anti-DoS
+             (!('students' in data) || (data.students is list && data.students.size() <= 200)) &&
+             (!('grades' in data) || (data.grades is list && data.grades.size() <= 300)) &&
+             (!('dailyCuts' in data) || (data.dailyCuts is map && data.dailyCuts.size() <= 500)) &&
+             (!('cabinetPoints' in data) || (data.cabinetPoints is map && data.cabinetPoints.size() <= 50)) &&
+             (!('calendarEvents' in data) || (data.calendarEvents is list && data.calendarEvents.size() <= 200)) &&
+             (!('debate' in data) || (data.debate is map && data.debate.size() <= 20)) &&
+             isValidOptionalString(data, 'calendarVersion', 1, 100) &&
+             isValidOptionalString(data, 'attendanceCutsVersion', 1, 100) &&
+             isValidOptionalNumberOrTimestamp(data, 'updatedAt') &&
+             isValidOptionalNumberOrTimestamp(data, 'timestamp');
     }
 
-    // Denegación por defecto para cualquier otra ruta
+    // Validador 2: asistencias
+    function isValidAsistencia(data) {
+      return data is map &&
+             data.size() > 0 &&
+             data.size() <= 150 &&
+             isValidOptionalString(data, 'fecha', 4, 32) &&
+             isValidOptionalString(data, 'grupo', 1, 32) &&
+             (!('total' in data) || data.total is number) &&
+             (!('records' in data) || 
+               ((data.records is map && data.records.size() <= 200) || 
+                (data.records is list && data.records.size() <= 200))) &&
+             (!('cortes' in data) || (data.cortes is map && data.cortes.size() <= 200)) &&
+             isValidOptionalNumberOrTimestamp(data, 'timestamp') &&
+             isValidOptionalNumberOrTimestamp(data, 'updatedAt');
+    }
+
+    // Validador 3: pasaportes
+    function isValidPasaporte(data) {
+      return data is map &&
+             data.size() > 0 &&
+             data.size() <= 30 &&
+             isValidOptionalString(data, 'id', 3, 50) &&
+             isValidOptionalString(data, 'matricula', 3, 50) &&
+             isValidOptionalString(data, 'name', 1, 150) &&
+             isValidOptionalString(data, 'countryId', 1, 20) &&
+             isValidOptionalString(data, 'role', 1, 100) &&
+             isValidOptionalString(data, 'folio', 1, 60) &&
+             isValidOptionalString(data, 'type', 1, 50) &&
+             isValidOptionalString(data, 'grupo', 1, 32) &&
+             (!('v' in data) || data.v is number) &&
+             isValidOptionalNumberOrTimestamp(data, 'ts') &&
+             isValidOptionalNumberOrTimestamp(data, 'timestamp');
+    }
+
+    // Validador 4: sesiones
+    function isValidSesion(data) {
+      return data is map &&
+             data.size() > 0 &&
+             data.size() <= 25 &&
+             isValidOptionalString(data, 'token', 1, 256) &&
+             isValidOptionalString(data, 'tokenHash', 1, 256) &&
+             isValidOptionalString(data, 'fecha', 4, 32) &&
+             isValidOptionalString(data, 'grupo', 1, 32) &&
+             isValidOptionalString(data, 'profesor', 1, 100) &&
+             isValidOptionalString(data, 'status', 1, 32) &&
+             (!('active' in data) || data.active is bool) &&
+             isValidOptionalNumberOrTimestamp(data, 'createdAt') &&
+             isValidOptionalNumberOrTimestamp(data, 'expiresAt') &&
+             isValidOptionalNumberOrTimestamp(data, 'timestamp');
+    }
+
+    // ===============================================================
+    // Reglas de Colecciones Permitidas
+    // ===============================================================
+
+    // 1. Estado sincronizado del sistema (Padrón, cortes acumulados, gabinete)
+    match /erap_sistema/{docId} {
+      allow read: if isValidDocId(docId, 1, 64);
+      allow create: if isValidDocId(docId, 1, 64) && isValidErapSistema(request.resource.data);
+      allow update: if isValidDocId(docId, 1, 64) && isValidErapSistema(request.resource.data);
+      // Protección contra borrado accidental de la base de datos principal
+      allow delete: if false;
+    }
+
+    // 2. Cortes diarios individuales de asistencia por fecha
+    match /asistencias/{fecha} {
+      allow read: if isValidDocId(fecha, 4, 32);
+      allow create: if isValidDocId(fecha, 4, 32) && isValidAsistencia(request.resource.data);
+      allow update: if isValidDocId(fecha, 4, 32) && isValidAsistencia(request.resource.data);
+      allow delete: if isValidDocId(fecha, 4, 32);
+    }
+
+    // 3. Pasaportes diplomáticos escolares de los alumnos
+    match /pasaportes/{matricula} {
+      allow read: if isValidDocId(matricula, 3, 50);
+      allow create: if isValidDocId(matricula, 3, 50) && isValidPasaporte(request.resource.data);
+      allow update: if isValidDocId(matricula, 3, 50) && isValidPasaporte(request.resource.data);
+      allow delete: if isValidDocId(matricula, 3, 50);
+    }
+
+    // 4. Sesiones y tokens temporales de QR para el aula
+    match /sesiones/{sesionId} {
+      allow read: if isValidDocId(sesionId, 1, 64);
+      allow create: if isValidDocId(sesionId, 1, 64) && isValidSesion(request.resource.data);
+      allow update: if isValidDocId(sesionId, 1, 64) && isValidSesion(request.resource.data);
+      allow delete: if isValidDocId(sesionId, 1, 64);
+    }
+
+    // ===============================================================
+    // 5. Denegación Estricta por Defecto (Default Deny)
+    // ===============================================================
     match /{document=**} {
       allow read, write: if false;
     }

@@ -1,4 +1,5 @@
 # Entornos y dependencias
+.venv/
 node_modules/
 .firebase/
 .firebaserc.local
@@ -22,3 +23,10 @@ generar_presentacion*.py
 .env
 .env.local
 .env.*.local
+
+# Plugins y herramientas de desarrollo local
+impeccable/
+skills/
+taste-skill/
+ui-ux-pro-max-skill/
+generar_*.py
