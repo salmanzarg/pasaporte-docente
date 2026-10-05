@@ -35,14 +35,26 @@ echo -e "  ${C_CYAN}${C_BOLD}Sistema de Asistencia Inteligente, Códigos QR y Ga
 echo -e "  ${C_SLATE}Creado por ${C_BOLD}Salvador Almánzar${C_RESET}${C_SLATE} • Licencia MIT (Open Source)${C_RESET}"
 echo -e "  ${C_GOLD}────────────────────────────────────────────────────────────────────────${C_RESET}\n"
 
+# Redirigir entrada interactiva desde la terminal si se ejecuta vía pipe (curl ... | bash)
+if [ ! -t 0 ]; then
+  exec < /dev/tty 2>/dev/null || true
+fi
+
 # Detección de entorno (si se ejecuta vía curl o clonado)
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "")"
 if [[ ! -f "$REPO_DIR/public/index.html" ]]; then
   echo -e "${C_CYAN}📦 Descargando repositorio oficial desde GitHub...${C_RESET}"
   if command -v git &> /dev/null; then
-    git clone https://github.com/salmanzarg/pasaporte-docente.git pasaporte-docente
-    cd pasaporte-docente
-    REPO_DIR="$(pwd)"
+    if [[ -d "pasaporte-docente" ]]; then
+      echo -e "${C_CYAN}🔄 Actualizando carpeta existente 'pasaporte-docente'...${C_RESET}"
+      cd pasaporte-docente
+      git pull origin main 2>/dev/null || true
+      REPO_DIR="$(pwd)"
+    else
+      git clone https://github.com/salmanzarg/pasaporte-docente.git pasaporte-docente
+      cd pasaporte-docente
+      REPO_DIR="$(pwd)"
+    fi
   else
     echo -e "${C_ROSE}❌ Error: Se requiere 'git' para clonar el proyecto.${C_RESET}"
     exit 1
